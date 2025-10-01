@@ -1,0 +1,2 @@
+source /home/neyon/fhv_master/Embedded_Systems/Test_Blinky_Application/build/gdbinit/symbols
+source /home/neyon/fhv_master/Embedded_Systems/Test_Blinky_Application/build/gdbinit/connect
