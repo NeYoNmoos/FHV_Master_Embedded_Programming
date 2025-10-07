@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "Test_Blinky_Application",
-    "project_version":    "1",
+    "project_version":    "b486174-dirty",
     "project_path":       "/home/neyon/fhv_master/Embedded_Systems/Test_Blinky_Application",
     "idf_path":           "/home/neyon/esp/v5.5.1/esp-idf",
     "build_dir":          "/home/neyon/fhv_master/Embedded_Systems/Test_Blinky_Application/build",
