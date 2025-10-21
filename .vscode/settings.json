@@ -1,3 +1,4 @@
 {
-  "idf.pythonInstallPath": "/home/neyon/anaconda3/bin/python"
+  "idf.pythonInstallPath": "/home/neyon/anaconda3/bin/python",
+  "cmake.sourceDirectory": "/home/neyon/fhv_master/Embedded_Systems/Test_Blinky_Application"
 }

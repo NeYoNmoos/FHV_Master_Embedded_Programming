@@ -1,0 +1,6 @@
+usbipd attach --wsl --busid 2-2
+
+sudo chmod 666 /dev/ttyACM0
+
+// verify connection
+ls -la /dev/ttyACM0
