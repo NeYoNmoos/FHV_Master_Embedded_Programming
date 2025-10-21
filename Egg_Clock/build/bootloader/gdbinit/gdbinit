@@ -1,0 +1,2 @@
+source /home/neyon/fhv_master/Embedded_Systems/Egg_Clock/build/bootloader/gdbinit/symbols
+source /home/neyon/fhv_master/Embedded_Systems/Egg_Clock/build/bootloader/gdbinit/connect
