@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "Egg_Clock",
-    "project_version":    "67bd0dd-dirty",
+    "project_version":    "2d3f448-dirty",
     "project_path":       "/home/neyon/fhv_master/Embedded_Systems/Egg_Clock",
     "idf_path":           "/home/neyon/esp/v5.5.1/esp-idf",
     "build_dir":          "/home/neyon/fhv_master/Embedded_Systems/Egg_Clock/build",

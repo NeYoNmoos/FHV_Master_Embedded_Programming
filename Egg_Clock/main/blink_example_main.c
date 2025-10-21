@@ -1,11 +1,8 @@
-/* Blink Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+/* Simple LED & Button Test for Clownfish ESP32-C3
+ * - 25 LEDs on GPIO 8
+ * - Button 1 (Increase) on GPIO 9 (BOOT button)
+ * - Button 2 (Decrease) on GPIO 2
+ */
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -14,91 +11,119 @@
 #include "led_strip.h"
 #include "sdkconfig.h"
 
-static const char *TAG = "example";
+static const char *TAG = "test";
 
-/* Use project configuration menu (idf.py menuconfig) to choose the GPIO to blink,
-   or you can edit the following line and set a number here.
-*/
-#define BLINK_GPIO CONFIG_BLINK_GPIO
+// GPIO Configuration
+#define LED_GPIO 8
+#define BUTTON_INCREASE_GPIO 9
+#define BUTTON_DECREASE_GPIO 2
+#define LED_COUNT 25
 
-static uint8_t s_led_state = 0;
-
-#ifdef CONFIG_BLINK_LED_STRIP
-
+// LED strip handle
 static led_strip_handle_t led_strip;
 
-static void blink_led(void)
+// LED functions
+void led_init(void)
 {
-    /* If the addressable LED is enabled */
-    if (s_led_state) {
-        /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
-        led_strip_set_pixel(led_strip, 0, 16, 16, 16);
-        /* Refresh the strip to send data */
-        led_strip_refresh(led_strip);
-    } else {
-        /* Set all LED off to clear all pixels */
-        led_strip_clear(led_strip);
-    }
-}
+    ESP_LOGI(TAG, "Initializing %d LEDs on GPIO %d", LED_COUNT, LED_GPIO);
 
-static void configure_led(void)
-{
-    ESP_LOGI(TAG, "Example configured to blink addressable LED!");
-    /* LED strip initialization with the GPIO and pixels number*/
     led_strip_config_t strip_config = {
-        .strip_gpio_num = BLINK_GPIO,
-        .max_leds = 1, // at least one LED on board
+        .strip_gpio_num = LED_GPIO,
+        .max_leds = LED_COUNT,
     };
-#if CONFIG_BLINK_LED_STRIP_BACKEND_RMT
+
     led_strip_rmt_config_t rmt_config = {
         .resolution_hz = 10 * 1000 * 1000, // 10MHz
         .flags.with_dma = false,
     };
+
     ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
-#elif CONFIG_BLINK_LED_STRIP_BACKEND_SPI
-    led_strip_spi_config_t spi_config = {
-        .spi_bus = SPI2_HOST,
-        .flags.with_dma = true,
-    };
-    ESP_ERROR_CHECK(led_strip_new_spi_device(&strip_config, &spi_config, &led_strip));
-#else
-#error "unsupported LED strip backend"
-#endif
-    /* Set all LED off to clear all pixels */
     led_strip_clear(led_strip);
 }
 
-#elif CONFIG_BLINK_LED_GPIO
-
-static void blink_led(void)
+void led_set_all(uint8_t r, uint8_t g, uint8_t b)
 {
-    /* Set the GPIO level according to the state (LOW or HIGH)*/
-    gpio_set_level(BLINK_GPIO, s_led_state);
+    for (int i = 0; i < LED_COUNT; i++)
+    {
+        led_strip_set_pixel(led_strip, i, r, g, b);
+    }
+    led_strip_refresh(led_strip);
 }
 
-static void configure_led(void)
+void led_clear(void)
 {
-    ESP_LOGI(TAG, "Example configured to blink GPIO LED!");
-    gpio_reset_pin(BLINK_GPIO);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+    led_strip_clear(led_strip);
 }
 
-#else
-#error "unsupported LED type"
-#endif
+// Button functions
+void button_init(void)
+{
+    ESP_LOGI(TAG, "Initializing buttons: Increase=%d, Decrease=%d",
+             BUTTON_INCREASE_GPIO, BUTTON_DECREASE_GPIO);
+
+    // Configure increase button (GPIO 9 - BOOT)
+    gpio_config_t btn_inc = {
+        .pin_bit_mask = (1ULL << BUTTON_INCREASE_GPIO),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&btn_inc);
+
+    // Configure decrease button (GPIO 2)
+    gpio_config_t btn_dec = {
+        .pin_bit_mask = (1ULL << BUTTON_DECREASE_GPIO),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&btn_dec);
+}
+
+bool button_increase_pressed(void)
+{
+    return (gpio_get_level(BUTTON_INCREASE_GPIO) == 0);
+}
+
+bool button_decrease_pressed(void)
+{
+    return (gpio_get_level(BUTTON_DECREASE_GPIO) == 0);
+}
 
 void app_main(void)
 {
+    ESP_LOGI(TAG, "=== LED & Button Test ===");
 
-    /* Configure the peripheral according to the LED type */
-    configure_led();
+    // Initialize hardware
+    led_init();
+    button_init();
 
-    while (1) {
-        ESP_LOGI(TAG, "Turning the LED %s!", s_led_state == true ? "ON" : "OFF");
-        blink_led();
-        /* Toggle the LED state */
-        s_led_state = !s_led_state;
-        vTaskDelay(CONFIG_BLINK_PERIOD / portTICK_PERIOD_MS);
+    ESP_LOGI(TAG, "Ready! Press buttons to test.");
+    ESP_LOGI(TAG, "- BOOT button (GPIO9) -> All LEDs GREEN");
+    ESP_LOGI(TAG, "- GPIO2 button -> All LEDs RED");
+
+    // Simple test loop
+    while (1)
+    {
+        if (button_increase_pressed())
+        {
+            ESP_LOGI(TAG, "Increase button pressed!");
+            led_set_all(0, 50, 0); // Green
+            vTaskDelay(pdMS_TO_TICKS(200));
+        }
+        else if (button_decrease_pressed())
+        {
+            ESP_LOGI(TAG, "Decrease button pressed!");
+            led_set_all(50, 0, 0); // Red
+            vTaskDelay(pdMS_TO_TICKS(200));
+        }
+        else
+        {
+            led_clear(); // LEDs off
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }

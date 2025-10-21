@@ -112,3 +112,5 @@
 1309	1402	1761078312608930748	/home/neyon/fhv_master/Embedded_Systems/Egg_Clock/build/bootloader/.bin_timestamp	9dfdb20dba10dbab
 1402	1433	1761078312608930748	esp-idf/esptool_py/CMakeFiles/bootloader_check_size	68d13ced4522c017
 1402	1433	1761078312608930748	/home/neyon/fhv_master/Embedded_Systems/Egg_Clock/build/bootloader/esp-idf/esptool_py/CMakeFiles/bootloader_check_size	68d13ced4522c017
+6	41	1761078598338908135	esp-idf/esptool_py/CMakeFiles/bootloader_check_size	68d13ced4522c017
+6	41	1761078598338908135	/home/neyon/fhv_master/Embedded_Systems/Egg_Clock/build/bootloader/esp-idf/esptool_py/CMakeFiles/bootloader_check_size	68d13ced4522c017
