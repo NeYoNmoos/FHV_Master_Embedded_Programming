@@ -1,0 +1,2 @@
+source /home/neyon/fhv_master/Embedded_Systems/Temperature_Sensor_Test/build/bootloader/gdbinit/symbols
+source /home/neyon/fhv_master/Embedded_Systems/Temperature_Sensor_Test/build/bootloader/gdbinit/connect
