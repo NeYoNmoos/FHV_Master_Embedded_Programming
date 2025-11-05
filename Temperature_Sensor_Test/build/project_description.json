@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "Temperature_Sensor_Test",
-    "project_version":    "2cccbc0",
+    "project_version":    "62df9c4-dirty",
     "project_path":       "/home/neyon/fhv_master/Embedded_Systems/Temperature_Sensor_Test",
     "idf_path":           "/home/neyon/esp/v5.5.1/esp-idf",
     "build_dir":          "/home/neyon/fhv_master/Embedded_Systems/Temperature_Sensor_Test/build",

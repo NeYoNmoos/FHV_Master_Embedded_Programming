@@ -172,10 +172,6 @@ static void i2c_scanner(void)
 
 void app_main(void)
 {
-    ESP_LOGI(TAG, "====================================");
-    ESP_LOGI(TAG, "ESP32-C3 SHTC3 Temperature & Humidity Sensor");
-    ESP_LOGI(TAG, "====================================");
-
     // Initialize I2C
     ESP_LOGI(TAG, "Initializing I2C master...");
     esp_err_t ret = i2c_master_init();
@@ -223,9 +219,6 @@ void app_main(void)
             ESP_LOGI(TAG, "Temperature: %.2f °C, Humidity: %.2f %%",
                      temperature, humidity);
         }
-        // Silently skip failed reads - don't print error
-
-        // Wait 2 seconds before next reading
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }
