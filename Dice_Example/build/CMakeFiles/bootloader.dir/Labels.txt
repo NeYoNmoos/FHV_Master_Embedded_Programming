@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/home/neyon/fhv_master/Embedded_Systems/Dice_Example/build/CMakeFiles/bootloader
+/home/neyon/fhv_master/Embedded_Systems/Dice_Example/build/CMakeFiles/bootloader.rule
+/home/neyon/fhv_master/Embedded_Systems/Dice_Example/build/CMakeFiles/bootloader-complete.rule
+/home/neyon/fhv_master/Embedded_Systems/Dice_Example/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+/home/neyon/fhv_master/Embedded_Systems/Dice_Example/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/home/neyon/fhv_master/Embedded_Systems/Dice_Example/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/home/neyon/fhv_master/Embedded_Systems/Dice_Example/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/home/neyon/fhv_master/Embedded_Systems/Dice_Example/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/home/neyon/fhv_master/Embedded_Systems/Dice_Example/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/home/neyon/fhv_master/Embedded_Systems/Dice_Example/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule

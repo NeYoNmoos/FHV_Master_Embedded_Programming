@@ -1,0 +1,2 @@
+source /home/neyon/fhv_master/Embedded_Systems/Dice_Example/build/bootloader/gdbinit/symbols
+source /home/neyon/fhv_master/Embedded_Systems/Dice_Example/build/bootloader/gdbinit/connect
