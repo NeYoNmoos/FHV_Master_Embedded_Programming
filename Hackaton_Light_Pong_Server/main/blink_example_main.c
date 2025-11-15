@@ -12,6 +12,10 @@
 #include "sdkconfig.h"
 #include "dmx.h"
 #include "mh_x25.h"
+#include "esp_event.h"
+#include "esp_now.h"
+#include "esp_wifi.h"
+#include "nvs_flash.h"
 
 static const char *TAG = "dmx_example";
 
@@ -29,60 +33,6 @@ static const char *TAG = "dmx_example";
 static dmx_handle_t dmx_handle = NULL;
 static mh_x25_handle_t light_handle = NULL;
 
-/**
- * @brief Circle movement demo
- *
- * This function makes the light move in a circular pattern.
- *
- * How it works:
- * - Pan controls horizontal rotation (left-right)
- * - Tilt controls vertical movement (up-down)
- * - We use sine and cosine to create circular motion
- * - The circle repeats continuously
- */
-static void demo_circle_movement(void)
-{
-    ESP_LOGI(TAG, "=== Circle Movement Demo ===");
-    ESP_LOGI(TAG, "The light will move in a circular pattern");
-
-    const int steps = 100;      // Number of steps in the circle
-    const int delay_ms = 30;    // Delay between each step
-    const float radius = 50.0f; // Size of the circle (0-127)
-
-    // Set shutter open and a nice color
-    mh_x25_set_shutter(light_handle, MH_X25_SHUTTER_OPEN);
-    mh_x25_set_color(light_handle, MH_X25_COLOR_GREEN);
-    mh_x25_set_gobo(light_handle, MH_X25_GOBO_OPEN);
-
-    // Center positions (middle of the movement range)
-    const uint8_t center_pan = 128;  // Center horizontal
-    const uint8_t center_tilt = 128; // Center vertical
-
-    ESP_LOGI(TAG, "Starting circular motion...");
-
-    for (int i = 0; i < steps; i++)
-    {
-        // Calculate angle for this step (0 to 2*PI)
-        float angle = (2.0f * M_PI * i) / steps;
-
-        // Calculate pan and tilt using sine and cosine
-        // This creates a perfect circle
-        uint8_t pan = center_pan + (int)(radius * cosf(angle));
-        uint8_t tilt = center_tilt + (int)(radius * sinf(angle));
-
-        // Set the new position
-        mh_x25_set_position(light_handle, pan, tilt);
-
-        // Small delay for smooth movement
-        vTaskDelay(pdMS_TO_TICKS(delay_ms));
-    }
-
-    ESP_LOGI(TAG, "Circle complete!");
-}
-
-/**
- * @brief Color wheel demo while moving
- */
 static void demo_circle_with_colors(void)
 {
     ESP_LOGI(TAG, "=== Circle with Color Changes ===");
@@ -99,66 +49,80 @@ static void demo_circle_with_colors(void)
     const int delay_ms = 40;
     const float radius = 60.0f;
 
+    const int corner_values[4][2] = {{128 + 20, 128 + 60}, {128 - 20, 128 + 60}, {128 - 20, 128 - 60}, {128 + 20, 128 - 60}};
+
+    const int border_values[4][2] = {{128 + 45, 128 + 50}, {128 + 45, 128 - 50}, {128, 128 + 60}, {128, 128 - 60}};
+
     mh_x25_set_shutter(light_handle, MH_X25_SHUTTER_OPEN);
 
     mh_x25_set_color(light_handle, MH_X25_COLOR_PINK);
-    mh_x25_set_position(light_handle, 128, 128);
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    // mh_x25_set_position(light_handle, 180, 10);
+    // vTaskDelay(pdMS_TO_TICKS(2000));
     mh_x25_set_color(light_handle, MH_X25_COLOR_DARK_BLUE);
-    mh_x25_set_gobo(light_handle, MH_X25_GOBO_4);
+    // mh_x25_set_gobo(light_handle, MH_X25_GOBO_3);
+    // mh_x25_set_shutter(light_handle, 150);
     mh_x25_set_gobo_rotation(light_handle, MH_X25_GOBO_ROT_CCW_FAST);
-    mh_x25_set_position(light_handle, 128, 0);
+    // mh_x25_set_position(light_handle, 128, 128);
+    // vTaskDelay(pdMS_TO_TICKS(2000));
+
+    mh_x25_set_position(light_handle, border_values[0][0], border_values[0][1]);
     vTaskDelay(pdMS_TO_TICKS(2000));
 
-    // mh_x25_set_position(light_handle, 0, 0);
-    // vTaskDelay(pdMS_TO_TICKS(500));
-    // for (int color_idx = 0; color_idx < num_colors; color_idx++)
-    // {
-    //     ESP_LOGI(TAG, "Color %d", color_idx + 1);
-    //     mh_x25_set_color(light_handle, colors[color_idx]);
+    mh_x25_set_position(light_handle, border_values[1][0], border_values[1][1]);
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
-    //     for (int i = 0; i < steps_per_color; i++)
-    //     {
-    //         float angle = (2.0f * M_PI * i) / steps_per_color;
-    //         uint8_t pan = 128 + (int)(radius * cosf(angle));
-    //         uint8_t tilt = 128 + (int)(radius * sinf(angle));
+    mh_x25_set_position(light_handle, border_values[2][0], border_values[2][1]);
+    vTaskDelay(pdMS_TO_TICKS(4000));
 
-    //         mh_x25_set_position(light_handle, pan, tilt);
-    //         vTaskDelay(pdMS_TO_TICKS(delay_ms));
-    //     }
-    // }
+    mh_x25_set_position(light_handle, border_values[3][0], border_values[3][1]);
+    vTaskDelay(pdMS_TO_TICKS(4000));
+
+    mh_x25_set_position(light_handle, corner_values[0][0], corner_values[0][1]);
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    mh_x25_set_position(light_handle, corner_values[1][0], corner_values[1][1]);
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    mh_x25_set_position(light_handle, corner_values[2][0], corner_values[2][1]);
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    mh_x25_set_position(light_handle, corner_values[3][0], corner_values[3][1]);
+    vTaskDelay(pdMS_TO_TICKS(2000));
 }
 
-/**
- * @brief Figure-8 pattern demo
- */
-static void demo_figure_eight(void)
+void on_receive(const uint8_t *mac_addr, const uint8_t *data, int len)
 {
-    ESP_LOGI(TAG, "=== Figure-8 Pattern ===");
-
-    const int steps = 200;
-    const int delay_ms = 20;
-
-    mh_x25_set_shutter(light_handle, MH_X25_SHUTTER_OPEN);
-    mh_x25_set_color(light_handle, MH_X25_COLOR_LIGHT_BLUE);
-
-    for (int i = 0; i < steps; i++)
-    {
-        float t = (2.0f * M_PI * i) / steps;
-
-        // Lissajous curve (figure-8)
-        uint8_t pan = 128 + (int)(50.0f * sinf(t));
-        uint8_t tilt = 128 + (int)(50.0f * sinf(2.0f * t));
-
-        mh_x25_set_position(light_handle, pan, tilt);
-        vTaskDelay(pdMS_TO_TICKS(delay_ms));
-    }
+    ESP_LOGI(TAG, "Received from MAC: %02X:%02X:%02X:%02X:%02X:%02X", mac_addr[0], mac_addr[1],
+             mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
 }
 
 // Task 1: ESP-NOW Receiver
 void espnow_receiver_task(void *pvParameters)
 {
     ESP_LOGI(TAG, "ESP-NOW receiver task started");
+
+    // esp now init
+    // NVS init
+    nvs_flash_init();
+    esp_netif_init();
+    esp_event_loop_create_default();
+
+    // WiFi Station Mode
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    esp_wifi_init(&cfg);
+    esp_wifi_set_mode(WIFI_MODE_STA);
+    esp_wifi_start();
+
+    // ESP-NOW init
+    esp_now_init();
+    esp_now_register_recv_cb((esp_now_recv_cb_t)on_receive);
+
+    ESP_LOGI(TAG, "Master bereit...");
+
+    uint8_t mac[6];
+    esp_wifi_get_mac(WIFI_IF_STA, mac);
+    printf("ESP32-C3 MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n", mac[0], mac[1], mac[2], mac[3],
+           mac[4], mac[5]);
 
     while (1)
     {
