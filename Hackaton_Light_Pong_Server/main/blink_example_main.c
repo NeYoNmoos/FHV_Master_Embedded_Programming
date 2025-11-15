@@ -19,9 +19,9 @@ static const char *TAG = "dmx_example";
  * IMPORTANT: Do NOT use GPIO18/19 - those are USB D-/D+ pins!
  * Using GPIO18/19 will disable USB and prevent reprogramming!
  */
-#define DMX_TX_PIN GPIO_NUM_21    // UART TX to RS-485 DI (safe pin)
-#define DMX_RX_PIN GPIO_NUM_20    // UART RX (not used in TX-only mode)
-#define DMX_ENABLE_PIN GPIO_NUM_9 // RS-485 DE/RE control (safe pin)
+#define DMX_TX_PIN GPIO_NUM_21    // 21 Wichtig!
+#define DMX_RX_PIN GPIO_NUM_20    // 20 Wichtig!
+#define DMX_ENABLE_PIN GPIO_NUM_9 // 9 Wichtig!
 
 /* MH X25 DMX Configuration */
 #define MH_X25_START_CHANNEL 1 // DMX start address (channels 1-6)
@@ -101,9 +101,15 @@ static void demo_circle_with_colors(void)
 
     mh_x25_set_shutter(light_handle, MH_X25_SHUTTER_OPEN);
 
-    mh_x25_set_color(light_handle, MH_X25_COLOR_GREEN);
+    mh_x25_set_color(light_handle, MH_X25_COLOR_PINK);
     mh_x25_set_position(light_handle, 128, 128);
-    vTaskDelay(pdMS_TO_TICKS(500));
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    mh_x25_set_color(light_handle, MH_X25_COLOR_DARK_BLUE);
+    mh_x25_set_gobo(light_handle, MH_X25_GOBO_4);
+    mh_x25_set_gobo_rotation(light_handle, MH_X25_GOBO_ROT_CCW_FAST);
+    mh_x25_set_position(light_handle, 128, 0);
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
     // mh_x25_set_position(light_handle, 0, 0);
     // vTaskDelay(pdMS_TO_TICKS(500));
     // for (int color_idx = 0; color_idx < num_colors; color_idx++)
@@ -146,6 +152,39 @@ static void demo_figure_eight(void)
 
         mh_x25_set_position(light_handle, pan, tilt);
         vTaskDelay(pdMS_TO_TICKS(delay_ms));
+    }
+}
+
+// Task 1: ESP-NOW Receiver
+void espnow_receiver_task(void *pvParameters)
+{
+    ESP_LOGI(TAG, "ESP-NOW receiver task started");
+
+    while (1)
+    {
+        // Your ESP-NOW receiving code here
+        // This runs independently
+
+        vTaskDelay(pdMS_TO_TICKS(10)); // Small delay
+    }
+}
+
+// Task 2: DMX Controller
+void dmx_controller_task(void *pvParameters)
+{
+    ESP_LOGI(TAG, "DMX controller task started");
+
+    // Main demo loop
+    int loop_count = 0;
+    while (1)
+    {
+        loop_count++;
+        ESP_LOGI(TAG, "\n\n========== DEMO CYCLE #%d ==========\n", loop_count);
+        // Circle with color changes
+        ESP_LOGI(TAG, ">>> Starting Demo");
+        demo_circle_with_colors();
+        ESP_LOGI(TAG, "<<< Demo  Complete");
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
@@ -208,35 +247,24 @@ void app_main(void)
     ESP_LOGI(TAG, "- Use mh_x25_set_position(handle, pan, tilt) to move");
     ESP_LOGI(TAG, "");
 
-    // Main demo loop
-    int loop_count = 0;
-    while (1)
-    {
-        loop_count++;
-        ESP_LOGI(TAG, "\n\n========== DEMO CYCLE #%d ==========\n", loop_count);
+    xTaskCreate(
+        espnow_receiver_task, // Task function
+        "espnow_rx",          // Task name
+        4096,                 // Stack size (bytes)
+        NULL,                 // Parameters
+        5,                    // Priority (higher = more important)
+        NULL                  // Task handle (optional)
+    );
 
-        // Simple circle movement
-        // ESP_LOGI(TAG, ">>> Starting Demo 1/3: Circle Movement");
-        // demo_circle_movement();
-        // ESP_LOGI(TAG, "<<< Demo 1/3 Complete");
-        // vTaskDelay(pdMS_TO_TICKS(1000));
+    // Create DMX controller task
+    xTaskCreate(
+        dmx_controller_task, // Task function
+        "dmx_ctrl",          // Task name
+        4096,                // Stack size (bytes)
+        NULL,                // Parameters
+        5,                   // Priority
+        NULL                 // Task handle
+    );
 
-        // Circle with color changes
-        ESP_LOGI(TAG, ">>> Starting Demo 2/3: Circle with Colors");
-        demo_circle_with_colors();
-        ESP_LOGI(TAG, "<<< Demo 2/3 Complete");
-        vTaskDelay(pdMS_TO_TICKS(1000));
-
-        // Figure-8 pattern
-        // ESP_LOGI(TAG, ">>> Starting Demo 3/3: Figure-8 Pattern");
-        // demo_figure_eight();
-        // ESP_LOGI(TAG, "<<< Demo 3/3 Complete");
-        // vTaskDelay(pdMS_TO_TICKS(1000));
-
-        // Turn off between cycles
-        ESP_LOGI(TAG, "=== Turning off for 2 seconds ===");
-        // mh_x25_off(light_handle);
-        vTaskDelay(pdMS_TO_TICKS(2000));
-        ESP_LOGI(TAG, "=== Restarting demo cycle ===\n");
-    }
+    ESP_LOGI(TAG, "Both tasks created and running!");
 }
