@@ -1,0 +1,2 @@
+source /home/neyon/fhv_master/Embedded_Systems/Hackathon_Light_Pong_Server_try2/build/bootloader/gdbinit/symbols
+source /home/neyon/fhv_master/Embedded_Systems/Hackathon_Light_Pong_Server_try2/build/bootloader/gdbinit/connect
