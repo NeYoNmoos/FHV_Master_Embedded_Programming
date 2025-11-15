@@ -7,6 +7,7 @@
 #include <math.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/event_groups.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
@@ -16,8 +17,20 @@
 #include "esp_now.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
+#include "esp_random.h"
 
 static const char *TAG = "dmx_example";
+
+/* Game State */
+#define SIDE_TOP 0
+#define SIDE_BOTTOM 1
+
+// Event bits for paddle hits
+#define PADDLE_TOP_HIT BIT0
+#define PADDLE_BOTTOM_HIT BIT1
+
+static EventGroupHandle_t paddle_events;
+static volatile int current_side = SIDE_TOP; // Ball starts at top
 
 /* DMX Configuration for Clownfish ESP32-C3
  * IMPORTANT: Do NOT use GPIO18/19 - those are USB D-/D+ pins!
@@ -32,6 +45,13 @@ static const char *TAG = "dmx_example";
 
 static dmx_handle_t dmx_handle = NULL;
 static mh_x25_handle_t light_handle = NULL;
+
+typedef struct
+{
+    uint8_t id;
+    float ax, ay, az;
+    float gx, gy, gz;
+} measurement_data_t;
 
 static void demo_circle_with_colors(void)
 {
@@ -65,35 +85,64 @@ static void demo_circle_with_colors(void)
     // mh_x25_set_position(light_handle, 128, 128);
     // vTaskDelay(pdMS_TO_TICKS(2000));
 
-    mh_x25_set_position(light_handle, border_values[0][0], border_values[0][1]);
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    // mh_x25_set_position(light_handle, border_values[0][0], border_values[0][1]);
+    // vTaskDelay(pdMS_TO_TICKS(2000));
 
-    mh_x25_set_position(light_handle, border_values[1][0], border_values[1][1]);
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    // mh_x25_set_position(light_handle, border_values[1][0], border_values[1][1]);
+    // vTaskDelay(pdMS_TO_TICKS(2000));
 
+    // mh_x25_set_position(light_handle, corner_values[0][0], corner_values[0][1]);
+    // vTaskDelay(pdMS_TO_TICKS(2000));
+
+    // mh_x25_set_position(light_handle, corner_values[1][0], corner_values[1][1]);
+    // vTaskDelay(pdMS_TO_TICKS(2000));
+
+    // mh_x25_set_position(light_handle, corner_values[2][0], corner_values[2][1]);
+    // vTaskDelay(pdMS_TO_TICKS(2000));
+
+    // mh_x25_set_position(light_handle, corner_values[3][0], corner_values[3][1]);
+    // vTaskDelay(pdMS_TO_TICKS(2000));
+
+    // aktual game:
     mh_x25_set_position(light_handle, border_values[2][0], border_values[2][1]);
-    vTaskDelay(pdMS_TO_TICKS(4000));
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    // random value for middle position
+    // int random_tilt = (esp_random() % 101) - 50;
+    // // ESP_LOGI(TAG, "Random tilt offset: %d", random_tilt);
+    // mh_x25_set_position(light_handle, 128 + 45, 128 + 50);
+    // // vTaskDelay(pdMS_TO_TICKS(2000));
+    // vTaskDelay(pdMS_TO_TICKS(1000));
 
     mh_x25_set_position(light_handle, border_values[3][0], border_values[3][1]);
-    vTaskDelay(pdMS_TO_TICKS(4000));
-
-    mh_x25_set_position(light_handle, corner_values[0][0], corner_values[0][1]);
-    vTaskDelay(pdMS_TO_TICKS(2000));
-
-    mh_x25_set_position(light_handle, corner_values[1][0], corner_values[1][1]);
-    vTaskDelay(pdMS_TO_TICKS(2000));
-
-    mh_x25_set_position(light_handle, corner_values[2][0], corner_values[2][1]);
-    vTaskDelay(pdMS_TO_TICKS(2000));
-
-    mh_x25_set_position(light_handle, corner_values[3][0], corner_values[3][1]);
     vTaskDelay(pdMS_TO_TICKS(2000));
 }
 
 void on_receive(const uint8_t *mac_addr, const uint8_t *data, int len)
 {
-    ESP_LOGI(TAG, "Received from MAC: %02X:%02X:%02X:%02X:%02X:%02X", mac_addr[0], mac_addr[1],
-             mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+    if (len < 1)
+        return; // safety check
+
+    // Cast data to measurement_data_t
+    measurement_data_t *m = (measurement_data_t *)data;
+
+    // Check which paddle sent the signal based on ID
+    if (m->id == 1)
+    {
+        // LEFT paddle (TOP side)
+        ESP_LOGI(TAG, "🎯 LEFT PADDLE (ID=1) HIT detected!");
+        xEventGroupSetBits(paddle_events, PADDLE_TOP_HIT);
+    }
+    else if (m->id == 2)
+    {
+        // RIGHT paddle (BOTTOM side)
+        ESP_LOGI(TAG, "🎯 RIGHT PADDLE (ID=2) HIT detected!");
+        xEventGroupSetBits(paddle_events, PADDLE_BOTTOM_HIT);
+    }
+    else
+    {
+        ESP_LOGW(TAG, "⚠️  Unknown paddle ID: %d", m->id);
+    }
 }
 
 // Task 1: ESP-NOW Receiver
@@ -133,22 +182,95 @@ void espnow_receiver_task(void *pvParameters)
     }
 }
 
-// Task 2: DMX Controller
+// Task 2: Light Pong Game Controller
 void dmx_controller_task(void *pvParameters)
 {
-    ESP_LOGI(TAG, "DMX controller task started");
+    ESP_LOGI(TAG, "🎮 Light Pong Game Controller started");
+    ESP_LOGI(TAG, "==============================");
 
-    // Main demo loop
-    int loop_count = 0;
+    // Border positions from your calibration
+    const int border_values[4][2] = {
+        {128 + 45, 128 + 50}, // Right edge [0]
+        {128 + 45, 128 - 50}, // Left edge [1]
+        {128, 128 + 60},      // Top edge [2]
+        {128, 128 - 60}       // Bottom edge [3]
+    };
+
+    // Set up light - white color, open shutter
+    mh_x25_set_color(light_handle, MH_X25_COLOR_WHITE);
+    mh_x25_set_shutter(light_handle, MH_X25_SHUTTER_OPEN);
+    mh_x25_set_gobo(light_handle, MH_X25_GOBO_OPEN);
+    mh_x25_set_gobo_rotation(light_handle, 0);
+
+    ESP_LOGI(TAG, "");
+    ESP_LOGI(TAG, "GAME RULES:");
+    ESP_LOGI(TAG, "- Ball starts at TOP");
+    ESP_LOGI(TAG, "- Waits for LEFT paddle (ID=1) to hit");
+    ESP_LOGI(TAG, "- Moves to BOTTOM");
+    ESP_LOGI(TAG, "- Waits for RIGHT paddle (ID=2) to hit");
+    ESP_LOGI(TAG, "- Repeats...");
+    ESP_LOGI(TAG, "==============================");
+
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    // Start ball at TOP
+    current_side = SIDE_TOP;
+    ESP_LOGI(TAG, "⬆️  Ball starting at TOP position...");
+    mh_x25_set_position(light_handle, border_values[2][0], border_values[2][1]);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
     while (1)
     {
-        loop_count++;
-        ESP_LOGI(TAG, "\n\n========== DEMO CYCLE #%d ==========\n", loop_count);
-        // Circle with color changes
-        ESP_LOGI(TAG, ">>> Starting Demo");
-        demo_circle_with_colors();
-        ESP_LOGI(TAG, "<<< Demo  Complete");
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        EventBits_t bits;
+
+        if (current_side == SIDE_TOP)
+        {
+            // Ball is at TOP, wait for LEFT paddle (ID=1) to hit
+            ESP_LOGI(TAG, "⬆️  Ball at TOP - waiting for LEFT paddle (ID=1)...");
+
+            bits = xEventGroupWaitBits(
+                paddle_events,
+                PADDLE_TOP_HIT,
+                pdTRUE,       // Clear bit after reading
+                pdFALSE,      // Wait for any bit (only one in this case)
+                portMAX_DELAY // Wait forever
+            );
+
+            if (bits & PADDLE_TOP_HIT)
+            {
+                ESP_LOGI(TAG, "✅ LEFT PADDLE HIT! Ball moving to BOTTOM...");
+
+                // Move ball to BOTTOM
+                mh_x25_set_position(light_handle, border_values[3][0], border_values[3][1]);
+                current_side = SIDE_BOTTOM;
+
+                vTaskDelay(pdMS_TO_TICKS(1000)); // Movement delay
+            }
+        }
+        else
+        { // current_side == SIDE_BOTTOM
+            // Ball is at BOTTOM, wait for RIGHT paddle (ID=2) to hit
+            ESP_LOGI(TAG, "⬇️  Ball at BOTTOM - waiting for RIGHT paddle (ID=2)...");
+
+            bits = xEventGroupWaitBits(
+                paddle_events,
+                PADDLE_BOTTOM_HIT,
+                pdTRUE, // Clear bit after reading
+                pdFALSE,
+                portMAX_DELAY // Wait forever
+            );
+
+            if (bits & PADDLE_BOTTOM_HIT)
+            {
+                ESP_LOGI(TAG, "✅ RIGHT PADDLE HIT! Ball moving to TOP...");
+
+                // Move ball to TOP
+                mh_x25_set_position(light_handle, border_values[2][0], border_values[2][1]);
+                current_side = SIDE_TOP;
+
+                vTaskDelay(pdMS_TO_TICKS(1000)); // Movement delay
+            }
+        }
     }
 }
 
@@ -156,6 +278,15 @@ void app_main(void)
 {
     ESP_LOGI(TAG, "DMX512 MH X25 Control Example");
     ESP_LOGI(TAG, "==============================");
+
+    // Create event group for paddle communication
+    paddle_events = xEventGroupCreate();
+    if (paddle_events == NULL)
+    {
+        ESP_LOGE(TAG, "Failed to create event group!");
+        return;
+    }
+    ESP_LOGI(TAG, "Event group created for paddle communication");
 
     // Initialize DMX
     dmx_config_t dmx_config = {
