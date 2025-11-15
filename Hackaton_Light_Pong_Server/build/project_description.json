@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "Hackaton_Light_Pong_Server",
-    "project_version":    "484b55e-dirty",
+    "project_version":    "ed0bd0c-dirty",
     "project_path":       "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server",
     "idf_path":           "/home/neyon/esp/v5.5.1/esp-idf",
     "build_dir":          "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build",
@@ -2147,6 +2147,18 @@
             "managed_reqs": [],
             "managed_priv_reqs": [ "espressif__led_strip" ],
             "include_dirs": [ "." ]
+        },
+        "esp_dmx": {
+            "alias": "idf::esp_dmx",
+            "target": "___idf_esp_dmx",
+            "prefix": "idf",
+            "dir": "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/components/esp_dmx",
+            "lib": "__idf_esp_dmx",
+            "reqs": [ "driver", "esp_timer", "esp_common", "esp_hw_support", "nvs_flash" ],
+            "priv_reqs": [],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "src" ]
         },
         "espressif__led_strip": {
             "alias": "idf::espressif__led_strip",

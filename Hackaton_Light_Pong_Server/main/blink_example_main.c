@@ -19,9 +19,9 @@ static const char *TAG = "dmx_example";
  * IMPORTANT: Do NOT use GPIO18/19 - those are USB D-/D+ pins!
  * Using GPIO18/19 will disable USB and prevent reprogramming!
  */
-#define DMX_TX_PIN GPIO_NUM_4     // UART TX to RS-485 DI (safe pin)
-#define DMX_RX_PIN GPIO_NUM_5     // UART RX (not used in TX-only mode)
-#define DMX_ENABLE_PIN GPIO_NUM_6 // RS-485 DE/RE control (safe pin)
+#define DMX_TX_PIN GPIO_NUM_21    // UART TX to RS-485 DI (safe pin)
+#define DMX_RX_PIN GPIO_NUM_20    // UART RX (not used in TX-only mode)
+#define DMX_ENABLE_PIN GPIO_NUM_9 // RS-485 DE/RE control (safe pin)
 
 /* MH X25 DMX Configuration */
 #define MH_X25_START_CHANNEL 1 // DMX start address (channels 1-6)
@@ -101,21 +101,26 @@ static void demo_circle_with_colors(void)
 
     mh_x25_set_shutter(light_handle, MH_X25_SHUTTER_OPEN);
 
-    for (int color_idx = 0; color_idx < num_colors; color_idx++)
-    {
-        ESP_LOGI(TAG, "Color %d", color_idx + 1);
-        mh_x25_set_color(light_handle, colors[color_idx]);
+    mh_x25_set_color(light_handle, MH_X25_COLOR_GREEN);
+    mh_x25_set_position(light_handle, 128, 128);
+    vTaskDelay(pdMS_TO_TICKS(500));
+    // mh_x25_set_position(light_handle, 0, 0);
+    // vTaskDelay(pdMS_TO_TICKS(500));
+    // for (int color_idx = 0; color_idx < num_colors; color_idx++)
+    // {
+    //     ESP_LOGI(TAG, "Color %d", color_idx + 1);
+    //     mh_x25_set_color(light_handle, colors[color_idx]);
 
-        for (int i = 0; i < steps_per_color; i++)
-        {
-            float angle = (2.0f * M_PI * i) / steps_per_color;
-            uint8_t pan = 128 + (int)(radius * cosf(angle));
-            uint8_t tilt = 128 + (int)(radius * sinf(angle));
+    //     for (int i = 0; i < steps_per_color; i++)
+    //     {
+    //         float angle = (2.0f * M_PI * i) / steps_per_color;
+    //         uint8_t pan = 128 + (int)(radius * cosf(angle));
+    //         uint8_t tilt = 128 + (int)(radius * sinf(angle));
 
-            mh_x25_set_position(light_handle, pan, tilt);
-            vTaskDelay(pdMS_TO_TICKS(delay_ms));
-        }
-    }
+    //         mh_x25_set_position(light_handle, pan, tilt);
+    //         vTaskDelay(pdMS_TO_TICKS(delay_ms));
+    //     }
+    // }
 }
 
 /**
@@ -211,10 +216,10 @@ void app_main(void)
         ESP_LOGI(TAG, "\n\n========== DEMO CYCLE #%d ==========\n", loop_count);
 
         // Simple circle movement
-        ESP_LOGI(TAG, ">>> Starting Demo 1/3: Circle Movement");
-        demo_circle_movement();
-        ESP_LOGI(TAG, "<<< Demo 1/3 Complete");
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        // ESP_LOGI(TAG, ">>> Starting Demo 1/3: Circle Movement");
+        // demo_circle_movement();
+        // ESP_LOGI(TAG, "<<< Demo 1/3 Complete");
+        // vTaskDelay(pdMS_TO_TICKS(1000));
 
         // Circle with color changes
         ESP_LOGI(TAG, ">>> Starting Demo 2/3: Circle with Colors");
@@ -223,14 +228,14 @@ void app_main(void)
         vTaskDelay(pdMS_TO_TICKS(1000));
 
         // Figure-8 pattern
-        ESP_LOGI(TAG, ">>> Starting Demo 3/3: Figure-8 Pattern");
-        demo_figure_eight();
-        ESP_LOGI(TAG, "<<< Demo 3/3 Complete");
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        // ESP_LOGI(TAG, ">>> Starting Demo 3/3: Figure-8 Pattern");
+        // demo_figure_eight();
+        // ESP_LOGI(TAG, "<<< Demo 3/3 Complete");
+        // vTaskDelay(pdMS_TO_TICKS(1000));
 
         // Turn off between cycles
         ESP_LOGI(TAG, "=== Turning off for 2 seconds ===");
-        mh_x25_off(light_handle);
+        // mh_x25_off(light_handle);
         vTaskDelay(pdMS_TO_TICKS(2000));
         ESP_LOGI(TAG, "=== Restarting demo cycle ===\n");
     }
