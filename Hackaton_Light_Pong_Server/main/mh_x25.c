@@ -113,7 +113,7 @@ esp_err_t mh_x25_set_tilt(mh_x25_handle_t handle, uint8_t tilt)
                            tilt);
 }
 
-esp_err_t mh_x25_set_position(mh_x25_handle_t handle, uint8_t pan, uint8_t tilt)
+esp_err_t mh_x25_set_position_16bit(mh_x25_handle_t handle, uint16_t pan_16bit, uint16_t tilt_16bit)
 {
     if (handle == NULL)
     {
@@ -122,14 +122,53 @@ esp_err_t mh_x25_set_position(mh_x25_handle_t handle, uint8_t pan, uint8_t tilt)
 
     mh_x25_context_t *ctx = (mh_x25_context_t *)handle;
 
-    ctx->channels[MH_X25_CHANNEL_PAN] = pan;
-    ctx->channels[MH_X25_CHANNEL_TILT] = tilt;
+    // Split 16-bit values into coarse (MSB) and fine (LSB)
+    uint8_t pan_coarse = (pan_16bit >> 8) & 0xFF;
+    uint8_t pan_fine = pan_16bit & 0xFF;
+    uint8_t tilt_coarse = (tilt_16bit >> 8) & 0xFF;
+    uint8_t tilt_fine = tilt_16bit & 0xFF;
 
-    uint8_t pos_data[2] = {pan, tilt};
+    // --- BEGIN FIX ---
+    // The fine and coarse channels are not contiguous, so we must send them as separate updates.
+    // Sending them as a single block was causing incorrect movement.
 
-    return dmx_set_channels(ctx->dmx_handle,
-                            ctx->start_channel + MH_X25_CHANNEL_PAN,
-                            pos_data, 2);
+    // Update local context
+    ctx->channels[MH_X25_CHANNEL_PAN] = pan_coarse;
+    ctx->channels[MH_X25_CHANNEL_TILT] = tilt_coarse;
+    ctx->channels[MH_X25_CHANNEL_PAN_FINE] = pan_fine;
+    ctx->channels[MH_X25_CHANNEL_TILT_FINE] = tilt_fine;
+
+    // Send each channel update individually to ensure correctness
+    esp_err_t ret;
+    ret = dmx_set_channel(ctx->dmx_handle, ctx->start_channel + MH_X25_CHANNEL_PAN, pan_coarse);
+    if (ret != ESP_OK)
+        return ret;
+
+    ret = dmx_set_channel(ctx->dmx_handle, ctx->start_channel + MH_X25_CHANNEL_TILT, tilt_coarse);
+    if (ret != ESP_OK)
+        return ret;
+
+    ret = dmx_set_channel(ctx->dmx_handle, ctx->start_channel + MH_X25_CHANNEL_PAN_FINE, pan_fine);
+    if (ret != ESP_OK)
+        return ret;
+
+    return dmx_set_channel(ctx->dmx_handle, ctx->start_channel + MH_X25_CHANNEL_TILT_FINE, tilt_fine);
+    // --- END FIX ---
+}
+
+esp_err_t mh_x25_set_speed(mh_x25_handle_t handle, uint8_t speed)
+{
+    if (handle == NULL)
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    mh_x25_context_t *ctx = (mh_x25_context_t *)handle;
+    ctx->channels[MH_X25_CHANNEL_SPEED] = speed;
+
+    return dmx_set_channel(ctx->dmx_handle,
+                           ctx->start_channel + MH_X25_CHANNEL_SPEED,
+                           speed);
 }
 
 esp_err_t mh_x25_set_color(mh_x25_handle_t handle, uint8_t color)
@@ -162,6 +201,21 @@ esp_err_t mh_x25_set_shutter(mh_x25_handle_t handle, uint8_t shutter)
                            shutter);
 }
 
+esp_err_t mh_x25_set_dimmer(mh_x25_handle_t handle, uint8_t dimmer)
+{
+    if (handle == NULL)
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    mh_x25_context_t *ctx = (mh_x25_context_t *)handle;
+    ctx->channels[MH_X25_CHANNEL_DIMMER] = dimmer;
+
+    return dmx_set_channel(ctx->dmx_handle,
+                           ctx->start_channel + MH_X25_CHANNEL_DIMMER,
+                           dimmer);
+}
+
 esp_err_t mh_x25_set_gobo(mh_x25_handle_t handle, uint8_t gobo)
 {
     if (handle == NULL)
@@ -192,6 +246,21 @@ esp_err_t mh_x25_set_gobo_rotation(mh_x25_handle_t handle, uint8_t rotation)
                            rotation);
 }
 
+esp_err_t mh_x25_set_special(mh_x25_handle_t handle, uint8_t special)
+{
+    if (handle == NULL)
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    mh_x25_context_t *ctx = (mh_x25_context_t *)handle;
+    ctx->channels[MH_X25_CHANNEL_SPECIAL] = special;
+
+    return dmx_set_channel(ctx->dmx_handle,
+                           ctx->start_channel + MH_X25_CHANNEL_SPECIAL,
+                           special);
+}
+
 esp_err_t mh_x25_set_all(mh_x25_handle_t handle, uint8_t pan, uint8_t tilt,
                          uint8_t color, uint8_t shutter, uint8_t gobo, uint8_t gobo_rot)
 {
@@ -220,8 +289,13 @@ esp_err_t mh_x25_off(mh_x25_handle_t handle)
         return ESP_ERR_INVALID_ARG;
     }
 
-    // Blackout: center position, shutter closed, white color
-    ESP_LOGI("mh_x25", "Turning off light - setting shutter to blackout");
-    return mh_x25_set_all(handle, 128, 128, MH_X25_COLOR_WHITE,
-                          MH_X25_SHUTTER_BLACKOUT, MH_X25_GOBO_OPEN, MH_X25_GOBO_ROT_STOP);
+    mh_x25_context_t *ctx = (mh_x25_context_t *)handle;
+
+    ESP_LOGI(TAG, "Turning off light - setting dimmer to 0");
+    ctx->channels[MH_X25_CHANNEL_DIMMER] = MH_X25_DIMMER_OFF;
+    ctx->channels[MH_X25_CHANNEL_SHUTTER] = MH_X25_SHUTTER_BLACKOUT;
+
+    // Update both channels
+    uint8_t off_data[2] = {ctx->channels[MH_X25_CHANNEL_SHUTTER], ctx->channels[MH_X25_CHANNEL_DIMMER]};
+    return dmx_set_channels(ctx->dmx_handle, ctx->start_channel + MH_X25_CHANNEL_SHUTTER, off_data, 2);
 }
