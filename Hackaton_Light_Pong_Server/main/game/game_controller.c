@@ -6,7 +6,7 @@
 #include "game_controller.h"
 #include "game_types.h"
 #include "../config/game_config.h"
-#include "../effects/light_effects.h"
+#include "light_effects.h"
 #include "esp_log.h"
 #include "esp_random.h"
 #include "esp_now.h"

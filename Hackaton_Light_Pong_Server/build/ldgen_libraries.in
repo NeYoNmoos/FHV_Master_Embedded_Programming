@@ -108,7 +108,11 @@ $<TARGET_FILE:idf::dmx_driver>
 $<TARGET_FILE:__idf_driver>
 $<TARGET_FILE:idf::mh_x25_driver>
 $<TARGET_FILE:__idf_dmx_driver>
+$<TARGET_FILE:idf::light_effects>
+$<TARGET_FILE:__idf_mh_x25_driver>
+$<TARGET_FILE:idf::espnow_comm>
 $<TARGET_FILE:idf::espressif__led_strip>
 $<TARGET_FILE:idf::main>
-$<TARGET_FILE:__idf_mh_x25_driver>
+$<TARGET_FILE:__idf_light_effects>
+$<TARGET_FILE:__idf_espnow_comm>
 $<TARGET_FILE:__idf_espressif__led_strip>

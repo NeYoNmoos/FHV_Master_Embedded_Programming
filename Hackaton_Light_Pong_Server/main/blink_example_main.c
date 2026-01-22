@@ -12,7 +12,7 @@
 #include "mh_x25_driver.h"
 #include "config/hardware_config.h"
 #include "config/game_config.h"
-#include "communication/espnow_handler.h"
+#include "espnow_handler.h"
 #include "game/game_controller.h"
 #include "game/game_types.h"
 

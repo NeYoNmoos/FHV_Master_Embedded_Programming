@@ -7,6 +7,7 @@
 #define GAME_CONFIG_H
 
 #include "freertos/FreeRTOS.h"
+#include "espnow_handler.h" // For PADDLE_TOP_HIT and PADDLE_BOTTOM_HIT
 
 #ifdef __cplusplus
 extern "C"
@@ -16,10 +17,6 @@ extern "C"
 /* Game State */
 #define SIDE_TOP 0
 #define SIDE_BOTTOM 1
-
-// Event bits for paddle hits
-#define PADDLE_TOP_HIT BIT0
-#define PADDLE_BOTTOM_HIT BIT1
 
 // Win condition
 #define WIN_SCORE 9

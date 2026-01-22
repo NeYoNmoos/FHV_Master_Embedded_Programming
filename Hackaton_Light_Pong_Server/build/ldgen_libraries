@@ -108,7 +108,11 @@
 /home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/driver/libdriver.a
 /home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/mh_x25_driver/libmh_x25_driver.a
 /home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/dmx_driver/libdmx_driver.a
+/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/light_effects/liblight_effects.a
+/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/mh_x25_driver/libmh_x25_driver.a
+/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/espnow_comm/libespnow_comm.a
 /home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/espressif__led_strip/libespressif__led_strip.a
 /home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/main/libmain.a
-/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/mh_x25_driver/libmh_x25_driver.a
+/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/light_effects/liblight_effects.a
+/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/espnow_comm/libespnow_comm.a
 /home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/espressif__led_strip/libespressif__led_strip.a
