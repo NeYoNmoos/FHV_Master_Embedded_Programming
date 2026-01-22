@@ -18,6 +18,8 @@
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 #include "esp_random.h"
+#include "esp_mac.h"
+#include "esp_system.h"
 
 static const char *TAG = "dmx_example";
 
@@ -57,7 +59,7 @@ typedef struct
     uint8_t btn_left_pressed;
     float ax, ay, az;
     float gx, gy, gz;
-} measurement_data_t;
+} input_event_t;
 
 typedef struct
 {
@@ -67,67 +69,15 @@ typedef struct
 
 game_score_t game_score = {0, 0}; // Initialize game score
 
-static void demo_circle_with_colors(void)
-{
-    ESP_LOGI(TAG, "=== Ping Pong Random Trajectory Demo ===");
-
-    // Initialize the light
-    mh_x25_set_shutter(light_handle, MH_X25_SHUTTER_OPEN);
-    mh_x25_set_dimmer(light_handle, MH_X25_DIMMER_FULL);
-    mh_x25_set_gobo(light_handle, MH_X25_GOBO_OPEN);
-    mh_x25_set_color(light_handle, MH_X25_COLOR_WHITE);
-    mh_x25_set_speed(light_handle, MH_X25_SPEED_FAST); // Set to fastest (0)
-    mh_x25_set_special(light_handle, MH_X25_SPECIAL_NO_BLACKOUT_PAN_TILT);
-
-    // Playing field boundaries
-    const uint8_t pan_min = 128 - 20;     // Left corner
-    const uint8_t pan_max = 128 + 20;     // Right corner
-    const uint8_t tilt_top = 128 + 60;    // Top border
-    const uint8_t tilt_bottom = 128 - 60; // Bottom border
-
-    ESP_LOGI(TAG, "Pan range: %d to %d, Tilt range: %d to %d", pan_min, pan_max, tilt_bottom, tilt_top);
-
-    while (1)
-    {
-        mh_x25_set_color(light_handle, MH_X25_COLOR_WHITE);
-        mh_x25_set_gobo(light_handle, MH_X25_GOBO_OPEN);
-
-        // Generate random pan position for TOP border (anywhere from left to right)
-        uint8_t pan_top = pan_min + (esp_random() % (pan_max - pan_min + 1));
-
-        ESP_LOGI(TAG, "Ball at TOP: pan=%d, tilt=%d", pan_top, tilt_top);
-        mh_x25_set_position_16bit(light_handle, pan_top << 8, tilt_top << 8);
-
-        vTaskDelay(pdMS_TO_TICKS(2000));
-
-        // Generate random pan position for BOTTOM border
-        uint8_t pan_bottom = pan_min + (esp_random() % (pan_max - pan_min + 1));
-
-        ESP_LOGI(TAG, "Ball at BOTTOM: pan=%d, tilt=%d", pan_bottom, tilt_bottom);
-        mh_x25_set_position_16bit(light_handle, pan_bottom << 8, tilt_bottom << 8);
-
-        // fireball
-        mh_x25_set_color(light_handle, MH_X25_COLOR_RED);
-        mh_x25_set_gobo(light_handle, MH_X25_GOBO_4);
-        mh_x25_set_gobo_rotation(light_handle, 255); // Fast rotation
-
-        vTaskDelay(pdMS_TO_TICKS(2000));
-
-        // Increment score and send to players
-        game_score.score_1 += 1;
-        esp_now_send(NULL, (uint8_t *)&game_score, sizeof(game_score_t));
-
-        ESP_LOGI(TAG, "Score sent: Player 1 = %d, Player 2 = %d", game_score.score_1, game_score.score_2);
-    }
-}
-
 void on_receive(const uint8_t *mac_addr, const uint8_t *data, int len)
 {
+
+    ESP_LOGI(TAG, "ESP-NOW data received, length: %d", len);
     if (len < 1)
         return; // safety check
 
-    // Cast data to measurement_data_t
-    measurement_data_t *m = (measurement_data_t *)data;
+    // Cast data to input_event_t
+    input_event_t *m = (input_event_t *)data;
 
     // Check which paddle sent the signal based on ID
     if (m->id == 1)
@@ -185,11 +135,16 @@ void espnow_receiver_task(void *pvParameters)
 
     uint8_t mac[6];
     esp_wifi_get_mac(WIFI_IF_STA, mac);
-    printf("ESP32-C3 MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n", mac[0], mac[1], mac[2], mac[3],
+    printf("ESP32-C3 WIFI MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n", mac[0], mac[1], mac[2], mac[3],
            mac[4], mac[5]);
 
+    uint8_t mac2[6];
+    esp_read_mac(mac2, ESP_MAC_WIFI_STA);
+    printf("ESP32-C3 MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n", mac2[0], mac2[1], mac2[2], mac2[3],
+           mac2[4], mac2[5]);
+
     // Add peers AFTER ESP-NOW is initialized
-    uint8_t player1_esp[] = {0x48, 0x31, 0xB7, 0xB2, 0xD4, 0xF0}; // ESP 1
+    uint8_t player1_esp[] = {0xCC, 0xBA, 0x97, 0x95, 0xD5, 0xC0}; // ESP 1
     uint8_t player2_esp[] = {0xF0, 0xF5, 0xBD, 0xB3, 0xB8, 0x44}; // ESP 2
 
     add_peer(player1_esp);
@@ -204,18 +159,6 @@ void espnow_receiver_task(void *pvParameters)
 
         vTaskDelay(pdMS_TO_TICKS(10)); // Small delay
     }
-}
-
-// Task for running the demo sequence
-void dmx_demo_task(void *pvParameters)
-{
-    ESP_LOGI(TAG, "🚀 Starting DMX Demo Task");
-
-    // Wait a moment for DMX to be ready
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
-    // Run the demo loop
-    demo_circle_with_colors();
 }
 
 // Winning animation function
@@ -330,7 +273,7 @@ void dmx_controller_task(void *pvParameters)
 
             if (bits & PADDLE_TOP_HIT)
             {
-                ESP_LOGI(TAG, "✅ LEFT PADDLE HIT! Ball moving to BOTTOM...");
+                ESP_LOGI(TAG, "LEFT PADDLE HIT! Ball moving to BOTTOM...");
 
                 // Check if button was pressed for fireball effect
                 if (last_btn_left_pressed == 0)
@@ -362,7 +305,7 @@ void dmx_controller_task(void *pvParameters)
             {
                 // Timeout! Player 1 (LEFT/TOP) missed - Player 2 scores
                 game_score.score_2++;
-                ESP_LOGI(TAG, "⏱️  TIMEOUT! Player 1 missed. Score: Player 1 = %d, Player 2 = %d",
+                ESP_LOGI(TAG, "⏱TIMEOUT! Player 1 missed. Score: Player 1 = %d, Player 2 = %d",
                          game_score.score_1, game_score.score_2);
 
                 // Send score to clients
@@ -406,7 +349,7 @@ void dmx_controller_task(void *pvParameters)
                 vTaskDelay(pdMS_TO_TICKS(500));
 
                 // Now wait INDEFINITELY for player to hit (no more timeouts)
-                ESP_LOGI(TAG, "⬆️  Waiting for Player 1 to hit (no timeout)...");
+                ESP_LOGI(TAG, "⬆Waiting for Player 1 to hit (no timeout)...");
                 xEventGroupClearBits(paddle_events, PADDLE_TOP_HIT);
                 bits = xEventGroupWaitBits(
                     paddle_events,
@@ -416,12 +359,12 @@ void dmx_controller_task(void *pvParameters)
                     portMAX_DELAY // Wait forever - no more point loss
                 );
 
-                ESP_LOGI(TAG, "✅ Player 1 HIT! Ball moving to BOTTOM...");
+                ESP_LOGI(TAG, "Player 1 HIT! Ball moving to BOTTOM...");
 
                 // Check if button was pressed for fireball effect
                 if (last_btn_left_pressed == 0)
                 {
-                    ESP_LOGI(TAG, "🔥 FIREBALL ACTIVATED by Player 1!");
+                    ESP_LOGI(TAG, "FIREBALL ACTIVATED by Player 1!");
                     mh_x25_set_color(light_handle, MH_X25_COLOR_RED);
                     mh_x25_set_gobo(light_handle, MH_X25_GOBO_4);
                     mh_x25_set_gobo_rotation(light_handle, 200);
@@ -447,7 +390,7 @@ void dmx_controller_task(void *pvParameters)
         else
         { // current_side == SIDE_BOTTOM
             // Ball is at BOTTOM, wait for RIGHT paddle (ID=2) to hit
-            ESP_LOGI(TAG, "⬇️  Ball at BOTTOM - waiting for RIGHT paddle (ID=2)...");
+            ESP_LOGI(TAG, "⬇Ball at BOTTOM - waiting for RIGHT paddle (ID=2)...");
 
             // Clear any pre-registered hits from when it wasn't this player's turn
             xEventGroupClearBits(paddle_events, PADDLE_BOTTOM_HIT);
@@ -462,7 +405,7 @@ void dmx_controller_task(void *pvParameters)
 
             if (bits & PADDLE_BOTTOM_HIT)
             {
-                ESP_LOGI(TAG, "✅ RIGHT PADDLE HIT! Ball moving to TOP...");
+                ESP_LOGI(TAG, "RIGHT PADDLE HIT! Ball moving to TOP...");
 
                 // Check if button was pressed for fireball effect
                 if (last_btn_right_pressed == 0)
@@ -494,7 +437,7 @@ void dmx_controller_task(void *pvParameters)
             {
                 // Timeout! Player 2 (RIGHT/BOTTOM) missed - Player 1 scores
                 game_score.score_1++;
-                ESP_LOGI(TAG, "⏱️  TIMEOUT! Player 2 missed. Score: Player 1 = %d, Player 2 = %d",
+                ESP_LOGI(TAG, "TIMEOUT! Player 2 missed. Score: Player 1 = %d, Player 2 = %d",
                          game_score.score_1, game_score.score_2);
 
                 // Send score to clients
@@ -538,7 +481,7 @@ void dmx_controller_task(void *pvParameters)
                 vTaskDelay(pdMS_TO_TICKS(500));
 
                 // Now wait INDEFINITELY for player to hit (no more timeouts)
-                ESP_LOGI(TAG, "⬇️  Waiting for Player 2 to hit (no timeout)...");
+                ESP_LOGI(TAG, "⬇Waiting for Player 2 to hit (no timeout)...");
                 xEventGroupClearBits(paddle_events, PADDLE_BOTTOM_HIT);
                 bits = xEventGroupWaitBits(
                     paddle_events,
@@ -548,7 +491,7 @@ void dmx_controller_task(void *pvParameters)
                     portMAX_DELAY // Wait forever - no more point loss
                 );
 
-                ESP_LOGI(TAG, "✅ Player 2 HIT! Ball moving to TOP...");
+                ESP_LOGI(TAG, "Player 2 HIT! Ball moving to TOP...");
 
                 // Check if button was pressed for fireball effect
                 if (last_btn_right_pressed == 0)
