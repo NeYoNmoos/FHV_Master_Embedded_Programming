@@ -36,14 +36,6 @@ extern "C"
 #define TILT_TOP (128 + 60)    // Top border
 #define TILT_BOTTOM (128 - 60) // Bottom border
 
-// Player MAC addresses
-#define PLAYER1_MAC \
-    {               \
-        0xCC, 0xBA, 0x97, 0x95, 0xD5, 0xC0}
-#define PLAYER2_MAC \
-    {               \
-        0xF0, 0xF5, 0xBD, 0xB3, 0xB8, 0x44}
-
 #ifdef __cplusplus
 }
 #endif

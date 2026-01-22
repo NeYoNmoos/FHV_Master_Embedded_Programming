@@ -176,7 +176,7 @@ void dmx_controller_task(void *pvParameters)
                     PADDLE_TOP_HIT,
                     pdTRUE,
                     pdFALSE,
-                    portMAX_DELAY // Wait forever - no more point loss
+                    portMAX_DELAY // Wait forever
                 );
 
                 ESP_LOGI(TAG, "Player 1 HIT! Ball moving to BOTTOM...");

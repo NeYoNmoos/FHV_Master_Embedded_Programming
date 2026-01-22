@@ -13,7 +13,7 @@ extern "C"
 {
 #endif
 
-/* DMX Configuration for Clownfish ESP32-C3
+/* DMX Configuration for ESP32-C3 Devboard
  * IMPORTANT: Do NOT use GPIO18/19 - those are USB D-/D+ pins!
  * Using GPIO18/19 will disable USB and prevent reprogramming!
  */

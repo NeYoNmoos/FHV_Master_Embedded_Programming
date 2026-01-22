@@ -128,7 +128,6 @@ esp_err_t mh_x25_set_position_16bit(mh_x25_handle_t handle, uint16_t pan_16bit, 
     uint8_t tilt_coarse = (tilt_16bit >> 8) & 0xFF;
     uint8_t tilt_fine = tilt_16bit & 0xFF;
 
-    // --- BEGIN FIX ---
     // The fine and coarse channels are not contiguous, so we must send them as separate updates.
     // Sending them as a single block was causing incorrect movement.
 
@@ -153,7 +152,6 @@ esp_err_t mh_x25_set_position_16bit(mh_x25_handle_t handle, uint16_t pan_16bit, 
         return ret;
 
     return dmx_set_channel(ctx->dmx_handle, ctx->start_channel + MH_X25_CHANNEL_TILT_FINE, tilt_fine);
-    // --- END FIX ---
 }
 
 esp_err_t mh_x25_set_speed(mh_x25_handle_t handle, uint8_t speed)

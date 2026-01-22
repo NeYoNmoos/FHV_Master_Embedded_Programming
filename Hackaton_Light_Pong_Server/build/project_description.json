@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "Hackaton_Light_Pong_Server",
-    "project_version":    "c192abf-dirty",
+    "project_version":    "914f7de-dirty",
     "project_path":       "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server",
     "idf_path":           "/home/neyon/esp/v5.5.1/esp-idf",
     "build_dir":          "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build",

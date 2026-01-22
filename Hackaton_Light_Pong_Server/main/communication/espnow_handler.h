@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
+#include "esp_now.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -16,11 +17,41 @@ extern "C"
 #endif
 
     /**
+     * @brief Message type enumeration
+     */
+    typedef enum
+    {
+        MSG_HELLO = 0,        // Client registration request
+        MSG_PADDLE_INPUT = 1, // Paddle input data
+        MSG_GAME_SCORE = 2,   // Game score broadcast
+        MSG_SERVER_ASSIGN = 3 // Server player ID assignment
+    } msg_type_t;
+
+    /**
+     * @brief Hello message from client (registration request)
+     */
+    typedef struct
+    {
+        uint8_t type; // MSG_HELLO
+    } hello_t;
+
+    /**
+     * @brief Server assignment response
+     */
+    typedef struct
+    {
+        uint8_t type;      // MSG_SERVER_ASSIGN
+        uint8_t player_id; // Assigned player ID (1 or 2)
+        uint8_t status;    // 0=accepted, 1=game_full, 2=already_registered
+    } server_assign_t;
+
+    /**
      * @brief Input event data structure from paddle controllers
      */
     typedef struct
     {
-        uint8_t id;
+        uint8_t type; // MSG_PADDLE_INPUT
+        uint8_t id;   // Player ID (assigned by server)
         uint8_t btn_right_pressed;
         uint8_t btn_left_pressed;
         float ax, ay, az;
@@ -46,11 +77,11 @@ extern "C"
     /**
      * @brief ESP-NOW receive callback
      *
-     * @param mac_addr MAC address of sender
+     * @param recv_info Reception info containing source MAC address
      * @param data Received data buffer
      * @param len Length of received data
      */
-    void on_receive(const uint8_t *mac_addr, const uint8_t *data, int len);
+    void on_receive(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len);
 
     /**
      * @brief Get last button state for left paddle
@@ -66,6 +97,19 @@ extern "C"
      * @brief Set event group and button pointers for communication
      */
     void espnow_set_context(EventGroupHandle_t events, volatile uint8_t *btn_left, volatile uint8_t *btn_right);
+
+    /**
+     * @brief Get number of registered players
+     * @return Number of registered players (0-2)
+     */
+    uint8_t espnow_get_num_players(void);
+
+    /**
+     * @brief Get player ID from MAC address
+     * @param mac_addr MAC address to lookup
+     * @return Player ID (1 or 2), or 0 if not found
+     */
+    uint8_t espnow_get_player_id(const uint8_t *mac_addr);
 
 #ifdef __cplusplus
 }
