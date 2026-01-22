@@ -1,6 +1,8 @@
 /**
  * @file espnow_handler.c
- * @brief ESP-NOW communication handler implementation
+ * @author Matthias Hefel
+ * @date 2026
+ * @brief ESP-NOW communication handler with dynamic peer discovery
  */
 
 #include "espnow_handler.h"

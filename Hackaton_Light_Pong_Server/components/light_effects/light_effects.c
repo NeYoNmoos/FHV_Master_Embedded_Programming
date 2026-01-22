@@ -1,6 +1,8 @@
 /**
  * @file light_effects.c
- * @brief Light effects and animations implementation
+ * @author Matthias Hefel
+ * @date 2026
+ * @brief Light effects and animations implementation for MH-X25
  */
 
 #include "light_effects.h"

@@ -1,6 +1,8 @@
 /**
  * @file game_controller.h
- * @brief Main game controller task
+ * @author Matthias Hefel
+ * @date 2026
+ * @brief Main game controller task for Light Pong
  */
 
 #ifndef GAME_CONTROLLER_H

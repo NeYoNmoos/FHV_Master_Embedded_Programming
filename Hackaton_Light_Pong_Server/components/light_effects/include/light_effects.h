@@ -1,5 +1,7 @@
 /**
  * @file light_effects.h
+ * @author Matthias Hefel
+ * @date 2026
  * @brief Light effects and animations for game events
  */
 

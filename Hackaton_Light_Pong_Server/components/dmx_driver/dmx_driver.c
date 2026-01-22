@@ -1,6 +1,8 @@
 /**
  * @file dmx_driver.c
- * @brief DMX512 Protocol Driver Implementation
+ * @author Matthias Hefel
+ * @date 2026
+ * @brief DMX512 driver implementation for RS-485 communication
  */
 
 #include "dmx_driver.h"

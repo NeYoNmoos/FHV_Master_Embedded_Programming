@@ -1,8 +1,13 @@
-/* DMX512 MH X25 Control Example
+/**
+ * @file light_pong_main.c
+ * @author Matthias Hefel
+ * @date 2026
+ * @brief Light Pong Game - Main Application
+ *
+ * DMX512-based Light Pong game using MH-X25 LED moving head.
+ * Features ESP-NOW wireless paddles, dynamic peer discovery, and fireball effects.
+ */
 
-   This example demonstrates how to control the MH X25 LED moving head light
-   via DMX512 protocol over RS-485.
-*/
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

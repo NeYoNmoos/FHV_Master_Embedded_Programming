@@ -1,6 +1,8 @@
 /**
  * @file game_types.h
- * @brief Game data type definitions
+ * @author Matthias Hefel
+ * @date 2026
+ * @brief Game data type definitions for Light Pong
  */
 
 #ifndef GAME_TYPES_H

@@ -1,5 +1,7 @@
 /**
  * @file dmx_driver.h
+ * @author Matthias Hefel
+ * @date 2026
  * @brief DMX512 Protocol Driver for ESP32-C3
  *
  * This driver implements DMX512 protocol over RS-485 using UART.

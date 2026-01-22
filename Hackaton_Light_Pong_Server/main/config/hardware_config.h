@@ -1,6 +1,8 @@
 /**
  * @file hardware_config.h
- * @brief Hardware pin and DMX configuration
+ * @author Matthias Hefel
+ * @date 2026
+ * @brief Hardware pin configuration for Light Pong game
  */
 
 #ifndef HARDWARE_CONFIG_H

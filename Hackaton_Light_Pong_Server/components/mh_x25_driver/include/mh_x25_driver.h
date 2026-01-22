@@ -1,5 +1,7 @@
 /**
  * @file mh_x25.h
+ * @author Matthias Hefel
+ * @date 2026
  * @brief MH X25 LED Moving Head Light Control Library
  *
  * This library provides a high-level interface for controlling the MH X25

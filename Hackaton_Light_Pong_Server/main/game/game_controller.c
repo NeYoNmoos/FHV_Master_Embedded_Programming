@@ -1,6 +1,8 @@
 /**
  * @file game_controller.c
- * @brief Main game controller implementation
+ * @author Matthias Hefel
+ * @date 2026
+ * @brief Main game controller implementation for Light Pong
  */
 
 #include "game_controller.h"

@@ -1,6 +1,8 @@
 /**
  * @file game_config.h
- * @brief Game configuration constants
+ * @author Matthias Hefel
+ * @date 2026
+ * @brief Game configuration constants for Light Pong
  */
 
 #ifndef GAME_CONFIG_H

@@ -1,6 +1,8 @@
 /**
  * @file mh_x25_driver.c
- * @brief MH X25 LED Moving Head Light Control Implementation
+ * @author Matthias Hefel
+ * @date 2026
+ * @brief MH-X25 LED moving head driver implementation
  */
 
 #include "mh_x25_driver.h"
