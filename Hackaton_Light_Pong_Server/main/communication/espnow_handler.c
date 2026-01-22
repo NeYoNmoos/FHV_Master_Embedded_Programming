@@ -185,7 +185,7 @@ void on_receive(const esp_now_recv_info_t *recv_info, const uint8_t *data, int l
     case MSG_HELLO:
         if (len == sizeof(hello_t))
         {
-            ESP_LOGI(TAG, "📡 Received HELLO from %02X:%02X:%02X:%02X:%02X:%02X (len=%d)",
+            ESP_LOGI(TAG, "Received HELLO from %02X:%02X:%02X:%02X:%02X:%02X (len=%d)",
                      mac_addr[0], mac_addr[1], mac_addr[2],
                      mac_addr[3], mac_addr[4], mac_addr[5], len);
             handle_hello_message(mac_addr);
@@ -248,11 +248,11 @@ void espnow_receiver_task(void *pvParameters)
     esp_err_t ret = esp_now_add_peer(&broadcast_peer);
     if (ret == ESP_OK)
     {
-        ESP_LOGI(TAG, "✅ Broadcast peer added");
+        ESP_LOGI(TAG, "Broadcast peer added");
     }
     else
     {
-        ESP_LOGE(TAG, "❌ Failed to add broadcast peer: %s", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Failed to add broadcast peer: %s", esp_err_to_name(ret));
     }
 
     ESP_LOGI(TAG, "Master bereit...");
