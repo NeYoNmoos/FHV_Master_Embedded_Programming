@@ -25,7 +25,7 @@
 
 #include <stdint.h>
 #include "esp_err.h"
-#include "dmx.h"
+#include "../dmx/dmx.h"
 
 #ifdef __cplusplus
 extern "C"
