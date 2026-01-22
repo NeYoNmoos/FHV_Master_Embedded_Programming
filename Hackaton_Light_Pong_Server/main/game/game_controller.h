@@ -7,8 +7,8 @@
 #define GAME_CONTROLLER_H
 
 #include <stdint.h>
-#include "../drivers/dmx/dmx.h"
-#include "../drivers/mh_x25/mh_x25.h"
+#include "dmx_driver.h"
+#include "mh_x25_driver.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 

@@ -104,7 +104,11 @@ $<TARGET_FILE:idf::esp_phy>
 $<TARGET_FILE:idf::wpa_supplicant>
 $<TARGET_FILE:idf::esp_coex>
 $<TARGET_FILE:idf::esp_wifi>
+$<TARGET_FILE:idf::dmx_driver>
+$<TARGET_FILE:__idf_driver>
+$<TARGET_FILE:idf::mh_x25_driver>
+$<TARGET_FILE:__idf_dmx_driver>
 $<TARGET_FILE:idf::espressif__led_strip>
 $<TARGET_FILE:idf::main>
-$<TARGET_FILE:__idf_driver>
+$<TARGET_FILE:__idf_mh_x25_driver>
 $<TARGET_FILE:__idf_espressif__led_strip>

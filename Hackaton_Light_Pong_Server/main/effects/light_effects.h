@@ -7,7 +7,7 @@
 #define LIGHT_EFFECTS_H
 
 #include <stdint.h>
-#include "../drivers/mh_x25/mh_x25.h"
+#include "mh_x25_driver.h"
 
 #ifdef __cplusplus
 extern "C"

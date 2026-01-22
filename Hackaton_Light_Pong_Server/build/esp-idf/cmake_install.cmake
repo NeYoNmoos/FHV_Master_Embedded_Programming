@@ -354,6 +354,16 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
+  include("/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/dmx_driver/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/mh_x25_driver/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
   include("/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/espressif__led_strip/cmake_install.cmake")
 endif()
 
