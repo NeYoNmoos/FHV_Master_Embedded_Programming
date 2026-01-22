@@ -15,7 +15,7 @@ static const char *TAG = "light_effects";
 // Winning animation function
 void play_winning_animation(uint8_t winning_player, mh_x25_handle_t light_handle)
 {
-    ESP_LOGI(TAG, "🏆 PLAYER %d WINS! Playing victory animation...", winning_player);
+    ESP_LOGI(TAG, "Player %d wins - starting victory animation", winning_player);
 
     uint8_t win_color = (winning_player == 1) ? MH_X25_COLOR_GREEN : MH_X25_COLOR_DARK_BLUE;
 
@@ -59,5 +59,5 @@ void play_winning_animation(uint8_t winning_player, mh_x25_handle_t light_handle
     mh_x25_set_gobo(light_handle, MH_X25_GOBO_OPEN);
     mh_x25_set_gobo_rotation(light_handle, 0);
 
-    ESP_LOGI(TAG, "🎊 Victory animation complete! Resetting game...");
+    ESP_LOGI(TAG, "Victory animation complete, resetting game");
 }

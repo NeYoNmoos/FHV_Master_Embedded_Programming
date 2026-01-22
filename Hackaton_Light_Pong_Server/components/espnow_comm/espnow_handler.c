@@ -98,7 +98,7 @@ static void handle_hello_message(const uint8_t *mac_addr)
 
     if (ret == ESP_OK)
     {
-        ESP_LOGI(TAG, "✅ Player %d registered: %02X:%02X:%02X:%02X:%02X:%02X",
+        ESP_LOGI(TAG, "Player %d registered: %02X:%02X:%02X:%02X:%02X:%02X",
                  assigned_id,
                  mac_addr[0], mac_addr[1], mac_addr[2],
                  mac_addr[3], mac_addr[4], mac_addr[5]);
@@ -108,7 +108,6 @@ static void handle_hello_message(const uint8_t *mac_addr)
             .player_id = assigned_id,
             .status = 0};
         esp_now_send(BROADCAST_MAC, (uint8_t *)&assign, sizeof(assign));
-        ESP_LOGI(TAG, "📤 Assignment broadcast sent to Player %d", assigned_id);
     }
     else
     {
@@ -206,10 +205,8 @@ void add_peer(const uint8_t mac[6])
     esp_now_add_peer(&peer);
 }
 
-// Task 1: ESP-NOW Receiver
 void espnow_receiver_task(void *pvParameters)
 {
-    ESP_LOGI(TAG, "ESP-NOW receiver task started");
 
     // esp now init
     // NVS init
@@ -236,29 +233,16 @@ void espnow_receiver_task(void *pvParameters)
     broadcast_peer.channel = 0;
     broadcast_peer.encrypt = false;
     esp_err_t ret = esp_now_add_peer(&broadcast_peer);
-    if (ret == ESP_OK)
-    {
-        ESP_LOGI(TAG, "Broadcast peer added");
-    }
-    else
+    if (ret != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to add broadcast peer: %s", esp_err_to_name(ret));
     }
 
-    ESP_LOGI(TAG, "Master bereit...");
-
     uint8_t mac[6];
     esp_wifi_get_mac(WIFI_IF_STA, mac);
-    printf("ESP32-C3 WIFI MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n", mac[0], mac[1], mac[2], mac[3],
-           mac[4], mac[5]);
-
-    uint8_t mac2[6];
-    esp_read_mac(mac2, ESP_MAC_WIFI_STA);
-    printf("ESP32-C3 MAC Address: %02X:%02X:%02X:%02X:%02X:%02X\n", mac2[0], mac2[1], mac2[2], mac2[3],
-           mac2[4], mac2[5]);
-
-    ESP_LOGI(TAG, "🎮 Server ready! Waiting for players to connect...");
-    ESP_LOGI(TAG, "Players should send HELLO message to register");
+    ESP_LOGI(TAG, "ESP-NOW server initialized - MAC: %02X:%02X:%02X:%02X:%02X:%02X",
+             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    ESP_LOGI(TAG, "Waiting for player connections");
 
     while (1)
     {

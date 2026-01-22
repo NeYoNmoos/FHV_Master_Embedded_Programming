@@ -42,8 +42,6 @@ void game_controller_set_context(mh_x25_handle_t light,
 
 void dmx_controller_task(void *pvParameters)
 {
-    ESP_LOGI(TAG, "🎮 Light Pong Game Controller started");
-    ESP_LOGI(TAG, "==============================");
 
     const uint8_t pan_min = PAN_MIN;
     const uint8_t pan_max = PAN_MAX;
@@ -63,7 +61,7 @@ void dmx_controller_task(void *pvParameters)
 
     *current_side = SIDE_TOP;
     uint8_t pan_position = pan_min + (esp_random() % (pan_max - pan_min + 1));
-    ESP_LOGI(TAG, "⬆️  Ball starting at TOP position (pan=%d, tilt=%d)...", pan_position, tilt_top);
+    ESP_LOGI(TAG, "Game started: ball at TOP (pan=%d, tilt=%d)", pan_position, tilt_top);
     mh_x25_set_position_16bit(light_handle, pan_position << 8, tilt_top << 8);
     vTaskDelay(pdMS_TO_TICKS(1000));
 
@@ -73,7 +71,7 @@ void dmx_controller_task(void *pvParameters)
 
         if (*current_side == SIDE_TOP)
         {
-            ESP_LOGI(TAG, "⬆️  Ball at TOP - waiting for LEFT paddle (ID=1)...");
+            ESP_LOGI(TAG, "Waiting for Player 1 paddle hit");
 
             xEventGroupClearBits(paddle_events, PADDLE_TOP_HIT);
 
@@ -86,11 +84,11 @@ void dmx_controller_task(void *pvParameters)
 
             if (bits & PADDLE_TOP_HIT)
             {
-                ESP_LOGI(TAG, "LEFT PADDLE HIT! Ball moving to BOTTOM...");
+                ESP_LOGI(TAG, "Player 1 hit detected, moving ball to BOTTOM");
 
                 if (*last_btn_left_pressed == 0)
                 {
-                    ESP_LOGI(TAG, "🔥 FIREBALL ACTIVATED by Player 1!");
+                    ESP_LOGI(TAG, "Fireball activated by Player 1");
                     mh_x25_set_color(light_handle, MH_X25_COLOR_RED);
                     mh_x25_set_gobo(light_handle, MH_X25_GOBO_4);
                     mh_x25_set_gobo_rotation(light_handle, 200);
@@ -113,7 +111,7 @@ void dmx_controller_task(void *pvParameters)
             else
             {
                 game_score->score_2++;
-                ESP_LOGI(TAG, "⏱TIMEOUT! Player 1 missed. Score: Player 1 = %d, Player 2 = %d",
+                ESP_LOGI(TAG, "Timeout: Player 1 missed - Score P1=%d P2=%d",
                          game_score->score_1, game_score->score_2);
 
                 esp_now_send(NULL, (uint8_t *)game_score, sizeof(game_score_t));
@@ -149,7 +147,7 @@ void dmx_controller_task(void *pvParameters)
                 mh_x25_set_color(light_handle, MH_X25_COLOR_WHITE);
                 vTaskDelay(pdMS_TO_TICKS(500));
 
-                ESP_LOGI(TAG, "⬆Waiting for Player 1 to hit (no timeout)...");
+                ESP_LOGI(TAG, "Waiting for Player 1 hit (no timeout)");
                 xEventGroupClearBits(paddle_events, PADDLE_TOP_HIT);
                 bits = xEventGroupWaitBits(
                     paddle_events,
@@ -158,12 +156,10 @@ void dmx_controller_task(void *pvParameters)
                     pdFALSE,
                     portMAX_DELAY);
 
-                ESP_LOGI(TAG, "Player 1 HIT! Ball moving to BOTTOM...");
+                ESP_LOGI(TAG, "Player 1 hit detected");
 
-                // Check if button was pressed for fireball effect
                 if (*last_btn_left_pressed == 0)
                 {
-                    ESP_LOGI(TAG, "FIREBALL ACTIVATED by Player 1!");
                     mh_x25_set_color(light_handle, MH_X25_COLOR_RED);
                     mh_x25_set_gobo(light_handle, MH_X25_GOBO_4);
                     mh_x25_set_gobo_rotation(light_handle, 200);
@@ -175,11 +171,7 @@ void dmx_controller_task(void *pvParameters)
                     mh_x25_set_gobo_rotation(light_handle, 0);
                 }
 
-                // Generate random pan position for BOTTOM
                 pan_position = pan_min + (esp_random() % (pan_max - pan_min + 1));
-                ESP_LOGI(TAG, "Moving to BOTTOM (pan=%d, tilt=%d)", pan_position, tilt_bottom);
-
-                // Move ball to BOTTOM with random pan
                 mh_x25_set_position_16bit(light_handle, pan_position << 8, tilt_bottom << 8);
                 *current_side = SIDE_BOTTOM;
 
@@ -188,7 +180,7 @@ void dmx_controller_task(void *pvParameters)
         }
         else
         {
-            ESP_LOGI(TAG, "⬇Ball at BOTTOM - waiting for RIGHT paddle (ID=2)...");
+            ESP_LOGI(TAG, "Waiting for Player 2 paddle hit");
 
             xEventGroupClearBits(paddle_events, PADDLE_BOTTOM_HIT);
 
@@ -201,97 +193,11 @@ void dmx_controller_task(void *pvParameters)
 
             if (bits & PADDLE_BOTTOM_HIT)
             {
-                ESP_LOGI(TAG, "RIGHT PADDLE HIT! Ball moving to TOP...");
+                ESP_LOGI(TAG, "Player 2 hit detected, moving ball to TOP");
 
-                // Check if button was pressed for fireball effect
                 if (*last_btn_right_pressed == 0)
                 {
-                    ESP_LOGI(TAG, "🔥 FIREBALL ACTIVATED by Player 2!");
-                    mh_x25_set_color(light_handle, MH_X25_COLOR_RED);
-                    mh_x25_set_gobo(light_handle, MH_X25_GOBO_4); // Fireball gobo
-                    mh_x25_set_gobo_rotation(light_handle, 200);  // Fast rotation
-                }
-                else
-                {
-                    // Normal ball appearance
-                    mh_x25_set_color(light_handle, MH_X25_COLOR_WHITE);
-                    mh_x25_set_gobo(light_handle, MH_X25_GOBO_OPEN);
-                    mh_x25_set_gobo_rotation(light_handle, 0);
-                }
-
-                // Generate random pan position for TOP
-                pan_position = pan_min + (esp_random() % (pan_max - pan_min + 1));
-                ESP_LOGI(TAG, "Moving to TOP (pan=%d, tilt=%d)", pan_position, tilt_top);
-
-                // Move ball to TOP with random pan
-                mh_x25_set_position_16bit(light_handle, pan_position << 8, tilt_top << 8);
-                *current_side = SIDE_TOP;
-
-                vTaskDelay(pdMS_TO_TICKS(1000)); // Movement delay
-            }
-            else
-            {
-                // Timeout! Player 2 (RIGHT/BOTTOM) missed - Player 1 scores
-                game_score->score_1++;
-                ESP_LOGI(TAG, "TIMEOUT! Player 2 missed. Score: Player 1 = %d, Player 2 = %d",
-                         game_score->score_1, game_score->score_2);
-
-                // Send score to clients
-                esp_now_send(NULL, (uint8_t *)game_score, sizeof(game_score_t));
-
-                // Check for win condition
-                if (game_score->score_1 >= WIN_SCORE)
-                {
-                    play_winning_animation(1, light_handle);
-
-                    // Reset game
-                    game_score->score_1 = 0;
-                    game_score->score_2 = 0;
-                    esp_now_send(NULL, (uint8_t *)game_score, sizeof(game_score_t));
-
-                    // Reset ball to starting position (TOP)
-                    pan_position = pan_min + (esp_random() % (pan_max - pan_min + 1));
-                    mh_x25_set_position_16bit(light_handle, pan_position << 8, tilt_top << 8);
-                    *current_side = SIDE_TOP;
-                    vTaskDelay(pdMS_TO_TICKS(2000));
-                    continue; // Skip to next iteration
-                }
-
-                // Victory celebration - Blink GREEN for Player 1 (5 seconds)
-                mh_x25_set_color(light_handle, MH_X25_COLOR_GREEN);
-                mh_x25_set_gobo(light_handle, MH_X25_GOBO_OPEN);
-                mh_x25_set_gobo_rotation(light_handle, 0);
-
-                for (int i = 0; i < CELEBRATION_BLINKS; i++)
-                {
-                    mh_x25_set_dimmer(light_handle, MH_X25_DIMMER_FULL); // ON
-                    vTaskDelay(pdMS_TO_TICKS(CELEBRATION_BLINK_ON_MS));
-                    mh_x25_set_dimmer(light_handle, 0); // OFF
-                    vTaskDelay(pdMS_TO_TICKS(CELEBRATION_BLINK_OFF_MS));
-                }
-                mh_x25_set_dimmer(light_handle, MH_X25_DIMMER_FULL); // End with light ON
-
-                // Ball stays at BOTTOM - reset to white, same player tries again
-                mh_x25_set_color(light_handle, MH_X25_COLOR_WHITE);
-                // current_side remains SIDE_BOTTOM - no position change needed
-                vTaskDelay(pdMS_TO_TICKS(500));
-
-                // Now wait INDEFINITELY for player to hit (no more timeouts)
-                ESP_LOGI(TAG, "⬇Waiting for Player 2 to hit (no timeout)...");
-                xEventGroupClearBits(paddle_events, PADDLE_BOTTOM_HIT);
-                bits = xEventGroupWaitBits(
-                    paddle_events,
-                    PADDLE_BOTTOM_HIT,
-                    pdTRUE,
-                    pdFALSE,
-                    portMAX_DELAY);
-
-                ESP_LOGI(TAG, "Player 2 HIT! Ball moving to TOP...");
-
-                // Check if button was pressed for fireball effect
-                if (*last_btn_right_pressed == 0)
-                {
-                    ESP_LOGI(TAG, "🔥 FIREBALL ACTIVATED by Player 2!");
+                    ESP_LOGI(TAG, "Fireball activated by Player 2");
                     mh_x25_set_color(light_handle, MH_X25_COLOR_RED);
                     mh_x25_set_gobo(light_handle, MH_X25_GOBO_4);
                     mh_x25_set_gobo_rotation(light_handle, 200);
@@ -303,11 +209,78 @@ void dmx_controller_task(void *pvParameters)
                     mh_x25_set_gobo_rotation(light_handle, 0);
                 }
 
-                // Generate random pan position for TOP
                 pan_position = pan_min + (esp_random() % (pan_max - pan_min + 1));
-                ESP_LOGI(TAG, "Moving to TOP (pan=%d, tilt=%d)", pan_position, tilt_top);
+                mh_x25_set_position_16bit(light_handle, pan_position << 8, tilt_top << 8);
+                *current_side = SIDE_TOP;
 
-                // Move ball to TOP with random pan
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            }
+            else
+            {
+                game_score->score_1++;
+                ESP_LOGI(TAG, "Timeout: Player 2 missed - Score P1=%d P2=%d",
+                         game_score->score_1, game_score->score_2);
+
+                esp_now_send(NULL, (uint8_t *)game_score, sizeof(game_score_t));
+
+                if (game_score->score_1 >= WIN_SCORE)
+                {
+                    play_winning_animation(1, light_handle);
+
+                    game_score->score_1 = 0;
+                    game_score->score_2 = 0;
+                    esp_now_send(NULL, (uint8_t *)game_score, sizeof(game_score_t));
+
+                    pan_position = pan_min + (esp_random() % (pan_max - pan_min + 1));
+                    mh_x25_set_position_16bit(light_handle, pan_position << 8, tilt_top << 8);
+                    *current_side = SIDE_TOP;
+                    vTaskDelay(pdMS_TO_TICKS(2000));
+                    continue;
+                }
+
+                // Victory celebration - Blink GREEN for Player 1 (5 seconds)
+                mh_x25_set_color(light_handle, MH_X25_COLOR_GREEN);
+                mh_x25_set_gobo(light_handle, MH_X25_GOBO_OPEN);
+                mh_x25_set_gobo_rotation(light_handle, 0);
+
+                for (int i = 0; i < CELEBRATION_BLINKS; i++)
+                {
+                    mh_x25_set_dimmer(light_handle, MH_X25_DIMMER_FULL);
+                    vTaskDelay(pdMS_TO_TICKS(CELEBRATION_BLINK_ON_MS));
+                    mh_x25_set_dimmer(light_handle, 0);
+                    vTaskDelay(pdMS_TO_TICKS(CELEBRATION_BLINK_OFF_MS));
+                }
+                mh_x25_set_dimmer(light_handle, MH_X25_DIMMER_FULL);
+
+                mh_x25_set_color(light_handle, MH_X25_COLOR_WHITE);
+                vTaskDelay(pdMS_TO_TICKS(500));
+
+                ESP_LOGI(TAG, "Waiting for Player 2 hit (no timeout)");
+                xEventGroupClearBits(paddle_events, PADDLE_BOTTOM_HIT);
+                bits = xEventGroupWaitBits(
+                    paddle_events,
+                    PADDLE_BOTTOM_HIT,
+                    pdTRUE,
+                    pdFALSE,
+                    portMAX_DELAY);
+
+                ESP_LOGI(TAG, "Player 2 hit detected");
+
+                if (*last_btn_right_pressed == 0)
+                {
+                    ESP_LOGI(TAG, "Fireball activated by Player 2");
+                    mh_x25_set_color(light_handle, MH_X25_COLOR_RED);
+                    mh_x25_set_gobo(light_handle, MH_X25_GOBO_4);
+                    mh_x25_set_gobo_rotation(light_handle, 200);
+                }
+                else
+                {
+                    mh_x25_set_color(light_handle, MH_X25_COLOR_WHITE);
+                    mh_x25_set_gobo(light_handle, MH_X25_GOBO_OPEN);
+                    mh_x25_set_gobo_rotation(light_handle, 0);
+                }
+
+                pan_position = pan_min + (esp_random() % (pan_max - pan_min + 1));
                 mh_x25_set_position_16bit(light_handle, pan_position << 8, tilt_top << 8);
                 *current_side = SIDE_TOP;
 

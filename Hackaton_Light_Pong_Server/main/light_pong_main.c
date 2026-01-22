@@ -35,17 +35,15 @@ game_score_t game_score = {0, 0};
 
 void app_main(void)
 {
-    ESP_LOGI(TAG, "🎮 DMX512 Light Pong Game Starting...");
-    ESP_LOGI(TAG, "==============================");
+    ESP_LOGI(TAG, "Initializing Light Pong Game");
 
     // Create event group for paddle communication
     paddle_events = xEventGroupCreate();
     if (paddle_events == NULL)
     {
-        ESP_LOGE(TAG, "Failed to create event group!");
+        ESP_LOGE(TAG, "Failed to create event group");
         return;
     }
-    ESP_LOGI(TAG, "Event group created for paddle communication");
 
     // Initialize DMX
     dmx_config_t dmx_config = {
@@ -61,7 +59,6 @@ void app_main(void)
         ESP_LOGE(TAG, "Failed to initialize DMX: %s", esp_err_to_name(ret));
         return;
     }
-    ESP_LOGI(TAG, "DMX initialized successfully");
 
     // Initialize MH X25 light
     mh_x25_config_t light_config = {
@@ -86,7 +83,6 @@ void app_main(void)
         dmx_deinit(dmx_handle);
         return;
     }
-    ESP_LOGI(TAG, "DMX transmission started");
 
     // Wait for DMX to stabilize
     vTaskDelay(pdMS_TO_TICKS(500));
@@ -115,7 +111,7 @@ void app_main(void)
         5,
         NULL);
 
-    ESP_LOGI(TAG, "All tasks started - Light Pong game ready!");
+    ESP_LOGI(TAG, "System initialized successfully");
 
     // Main loop - keep running
     while (1)
