@@ -24,16 +24,14 @@
 static const char *TAG = "main";
 
 static EventGroupHandle_t paddle_events;
-static volatile int current_side = SIDE_TOP; // Ball starts at top
-
-// Store button press states for fireball feature
+static volatile int current_side = SIDE_TOP;
 static volatile uint8_t last_btn_left_pressed = 0;
 static volatile uint8_t last_btn_right_pressed = 0;
 
 static dmx_handle_t dmx_handle = NULL;
 static mh_x25_handle_t light_handle = NULL;
 
-game_score_t game_score = {0, 0}; // Initialize game score
+game_score_t game_score = {0, 0};
 
 void app_main(void)
 {
@@ -55,8 +53,7 @@ void app_main(void)
         .rx_pin = DMX_RX_PIN,
         .enable_pin = DMX_ENABLE_PIN,
         .uart_num = UART_NUM_1,
-        .universe_size = 512 // Full DMX universe
-    };
+        .universe_size = 512};
 
     esp_err_t ret = dmx_init(&dmx_config, &dmx_handle);
     if (ret != ESP_OK)
@@ -102,25 +99,21 @@ void app_main(void)
                                 (uint8_t *)&last_btn_left_pressed, (uint8_t *)&last_btn_right_pressed,
                                 &game_score);
 
-    // Create ESP-NOW receiver task
     xTaskCreate(
-        espnow_receiver_task, // Task function
-        "espnow_rx",          // Task name
-        4096,                 // Stack size (bytes)
-        NULL,                 // Parameters
-        5,                    // Priority (higher = more important)
-        NULL                  // Task handle (optional)
-    );
+        espnow_receiver_task,
+        "espnow_rx",
+        4096,
+        NULL,
+        5,
+        NULL);
 
-    // Create game controller task
     xTaskCreate(
-        dmx_controller_task, // Task function
-        "dmx_ctrl",          // Task name
-        4096,                // Stack size (bytes)
-        NULL,                // Parameters
-        5,                   // Priority
-        NULL                 // Task handle
-    );
+        dmx_controller_task,
+        "dmx_ctrl",
+        4096,
+        NULL,
+        5,
+        NULL);
 
     ESP_LOGI(TAG, "All tasks started - Light Pong game ready!");
 

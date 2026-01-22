@@ -50,10 +50,10 @@ uint8_t espnow_get_player_id(const uint8_t *mac_addr)
     {
         if (memcmp(player_macs[i], mac_addr, 6) == 0)
         {
-            return i + 1; // Player IDs are 1-based
+            return i + 1;
         }
     }
-    return 0; // Not found
+    return 0;
 }
 
 static void handle_hello_message(const uint8_t *mac_addr)
@@ -68,13 +68,11 @@ static void handle_hello_message(const uint8_t *mac_addr)
         server_assign_t assign = {
             .type = MSG_SERVER_ASSIGN,
             .player_id = existing_id,
-            .status = 2 // Already registered
-        };
-        esp_now_send(BROADCAST_MAC, (uint8_t *)&assign, sizeof(assign)); // Broadcast
+            .status = 2};
+        esp_now_send(BROADCAST_MAC, (uint8_t *)&assign, sizeof(assign));
         return;
     }
 
-    // Check if game is full
     if (num_players >= MAX_PLAYERS)
     {
         ESP_LOGW(TAG, "Game full, rejecting new player");
@@ -82,18 +80,15 @@ static void handle_hello_message(const uint8_t *mac_addr)
         server_assign_t assign = {
             .type = MSG_SERVER_ASSIGN,
             .player_id = 0,
-            .status = 1 // Game full
-        };
-        esp_now_send(BROADCAST_MAC, (uint8_t *)&assign, sizeof(assign)); // Broadcast
+            .status = 1};
+        esp_now_send(BROADCAST_MAC, (uint8_t *)&assign, sizeof(assign));
         return;
     }
 
-    // Register new player
     memcpy(player_macs[num_players], mac_addr, 6);
     num_players++;
     uint8_t assigned_id = num_players;
 
-    // Add as ESP-NOW peer
     esp_now_peer_info_t peer = {0};
     memcpy(peer.peer_addr, mac_addr, 6);
     peer.ifidx = ESP_IF_WIFI_STA;
@@ -108,19 +103,17 @@ static void handle_hello_message(const uint8_t *mac_addr)
                  mac_addr[0], mac_addr[1], mac_addr[2],
                  mac_addr[3], mac_addr[4], mac_addr[5]);
 
-        // Send assignment via broadcast (client hasn't added us as peer yet)
         server_assign_t assign = {
             .type = MSG_SERVER_ASSIGN,
             .player_id = assigned_id,
-            .status = 0 // Accepted
-        };
-        esp_now_send(BROADCAST_MAC, (uint8_t *)&assign, sizeof(assign)); // Broadcast
+            .status = 0};
+        esp_now_send(BROADCAST_MAC, (uint8_t *)&assign, sizeof(assign));
         ESP_LOGI(TAG, "📤 Assignment broadcast sent to Player %d", assigned_id);
     }
     else
     {
         ESP_LOGE(TAG, "Failed to add peer: %s", esp_err_to_name(ret));
-        num_players--; // Rollback
+        num_players--;
     }
 }
 
@@ -141,12 +134,11 @@ static void handle_paddle_input(const uint8_t *mac_addr, const uint8_t *data, in
         return;
     }
 
-    // Handle based on player ID
     if (player_id == 1)
     {
         if (last_btn_left_pressed != NULL)
         {
-            *last_btn_left_pressed = m->btn_right_pressed; // switch on purpose
+            *last_btn_left_pressed = m->btn_right_pressed;
         }
         ESP_LOGI(TAG, "LEFT PADDLE (Player 1) HIT! Button: %d", m->btn_right_pressed);
 
@@ -159,7 +151,7 @@ static void handle_paddle_input(const uint8_t *mac_addr, const uint8_t *data, in
     {
         if (last_btn_right_pressed != NULL)
         {
-            *last_btn_right_pressed = m->btn_left_pressed; // switch on purpose
+            *last_btn_right_pressed = m->btn_left_pressed;
         }
         ESP_LOGI(TAG, "RIGHT PADDLE (Player 2) HIT! Button: %d", m->btn_left_pressed);
 
@@ -173,12 +165,9 @@ static void handle_paddle_input(const uint8_t *mac_addr, const uint8_t *data, in
 void on_receive(const esp_now_recv_info_t *recv_info, const uint8_t *data, int len)
 {
     if (len < 1)
-        return; // Safety check
+        return;
 
-    // Extract source MAC address from recv_info
     const uint8_t *mac_addr = recv_info->src_addr;
-
-    // Get message type from first byte
     uint8_t msg_type = data[0];
 
     switch (msg_type)

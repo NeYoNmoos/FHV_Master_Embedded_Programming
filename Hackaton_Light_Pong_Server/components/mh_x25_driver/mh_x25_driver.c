@@ -42,7 +42,6 @@ esp_err_t mh_x25_init(const mh_x25_config_t *config, mh_x25_handle_t *out_handle
         return ESP_ERR_INVALID_ARG;
     }
 
-    // Allocate context
     mh_x25_context_t *ctx = (mh_x25_context_t *)calloc(1, sizeof(mh_x25_context_t));
     if (ctx == NULL)
     {
@@ -53,10 +52,8 @@ esp_err_t mh_x25_init(const mh_x25_config_t *config, mh_x25_handle_t *out_handle
     ctx->dmx_handle = config->dmx_handle;
     ctx->start_channel = config->start_channel;
 
-    // Initialize all channels to 0
     memset(ctx->channels, 0, MH_X25_NUM_CHANNELS);
 
-    // Write initial values to DMX
     dmx_set_channels(ctx->dmx_handle, ctx->start_channel, ctx->channels, MH_X25_NUM_CHANNELS);
 
     *out_handle = (mh_x25_handle_t)ctx;
@@ -76,7 +73,6 @@ esp_err_t mh_x25_deinit(mh_x25_handle_t handle)
 
     mh_x25_context_t *ctx = (mh_x25_context_t *)handle;
 
-    // Turn off the light before cleanup
     mh_x25_off(handle);
 
     free(ctx);
@@ -124,7 +120,6 @@ esp_err_t mh_x25_set_position_16bit(mh_x25_handle_t handle, uint16_t pan_16bit, 
 
     mh_x25_context_t *ctx = (mh_x25_context_t *)handle;
 
-    // Split 16-bit values into coarse (MSB) and fine (LSB)
     uint8_t pan_coarse = (pan_16bit >> 8) & 0xFF;
     uint8_t pan_fine = pan_16bit & 0xFF;
     uint8_t tilt_coarse = (tilt_16bit >> 8) & 0xFF;
@@ -133,13 +128,11 @@ esp_err_t mh_x25_set_position_16bit(mh_x25_handle_t handle, uint16_t pan_16bit, 
     // The fine and coarse channels are not contiguous, so we must send them as separate updates.
     // Sending them as a single block was causing incorrect movement.
 
-    // Update local context
     ctx->channels[MH_X25_CHANNEL_PAN] = pan_coarse;
     ctx->channels[MH_X25_CHANNEL_TILT] = tilt_coarse;
     ctx->channels[MH_X25_CHANNEL_PAN_FINE] = pan_fine;
     ctx->channels[MH_X25_CHANNEL_TILT_FINE] = tilt_fine;
 
-    // Send each channel update individually to ensure correctness
     esp_err_t ret;
     ret = dmx_set_channel(ctx->dmx_handle, ctx->start_channel + MH_X25_CHANNEL_PAN, pan_coarse);
     if (ret != ESP_OK)
@@ -295,7 +288,6 @@ esp_err_t mh_x25_off(mh_x25_handle_t handle)
     ctx->channels[MH_X25_CHANNEL_DIMMER] = MH_X25_DIMMER_OFF;
     ctx->channels[MH_X25_CHANNEL_SHUTTER] = MH_X25_SHUTTER_BLACKOUT;
 
-    // Update both channels
     uint8_t off_data[2] = {ctx->channels[MH_X25_CHANNEL_SHUTTER], ctx->channels[MH_X25_CHANNEL_DIMMER]};
     return dmx_set_channels(ctx->dmx_handle, ctx->start_channel + MH_X25_CHANNEL_SHUTTER, off_data, 2);
 }

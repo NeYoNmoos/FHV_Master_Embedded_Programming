@@ -29,15 +29,15 @@ static const char *TAG = "DMX";
  */
 typedef struct
 {
-    uart_port_t uart_num;        // UART port number
-    gpio_num_t tx_pin;           // TX pin
-    gpio_num_t rx_pin;           // RX pin
-    gpio_num_t enable_pin;       // RS-485 DE/RE control pin
-    uint16_t universe_size;      // Number of DMX channels
-    uint8_t *dmx_data;           // DMX data buffer (0-512, index 0 is start code)
-    SemaphoreHandle_t mutex;     // Mutex for thread-safe access
-    TaskHandle_t tx_task_handle; // Continuous transmission task handle
-    bool is_running;             // Transmission task running flag
+    uart_port_t uart_num;
+    gpio_num_t tx_pin;
+    gpio_num_t rx_pin;
+    gpio_num_t enable_pin;
+    uint16_t universe_size;
+    uint8_t *dmx_data;
+    SemaphoreHandle_t mutex;
+    TaskHandle_t tx_task_handle;
+    bool is_running;
 } dmx_context_t;
 
 /**
@@ -45,12 +45,10 @@ typedef struct
  */
 static esp_err_t dmx_send_break(dmx_context_t *ctx)
 {
-    // Set UART to break (SPACE)
     uart_wait_tx_done(ctx->uart_num, portMAX_DELAY);
     uart_set_line_inverse(ctx->uart_num, UART_SIGNAL_TXD_INV);
     esp_rom_delay_us(DMX_BREAK_US);
 
-    // Send MAB (MARK)
     uart_set_line_inverse(ctx->uart_num, UART_SIGNAL_INV_DISABLE);
     esp_rom_delay_us(DMX_MAB_US);
 
@@ -70,13 +68,11 @@ static void dmx_tx_task(void *arg)
 
     while (ctx->is_running)
     {
-        // Transmit DMX packet
         if (dmx_transmit(ctx) != ESP_OK)
         {
             ESP_LOGW(TAG, "DMX transmission failed");
         }
 
-        // Wait for next cycle
         vTaskDelayUntil(&last_wake_time, period);
     }
 
@@ -97,7 +93,6 @@ esp_err_t dmx_init(const dmx_config_t *config, dmx_handle_t *out_handle)
         return ESP_ERR_INVALID_ARG;
     }
 
-    // Allocate context
     dmx_context_t *ctx = (dmx_context_t *)calloc(1, sizeof(dmx_context_t));
     if (ctx == NULL)
     {
@@ -105,7 +100,6 @@ esp_err_t dmx_init(const dmx_config_t *config, dmx_handle_t *out_handle)
         return ESP_ERR_NO_MEM;
     }
 
-    // Allocate DMX data buffer (+1 for start code)
     ctx->dmx_data = (uint8_t *)calloc(config->universe_size + 1, sizeof(uint8_t));
     if (ctx->dmx_data == NULL)
     {
@@ -114,7 +108,6 @@ esp_err_t dmx_init(const dmx_config_t *config, dmx_handle_t *out_handle)
         return ESP_ERR_NO_MEM;
     }
 
-    // Create mutex
     ctx->mutex = xSemaphoreCreateMutex();
     if (ctx->mutex == NULL)
     {
@@ -124,7 +117,6 @@ esp_err_t dmx_init(const dmx_config_t *config, dmx_handle_t *out_handle)
         return ESP_ERR_NO_MEM;
     }
 
-    // Store configuration
     ctx->uart_num = config->uart_num;
     ctx->tx_pin = config->tx_pin;
     ctx->rx_pin = config->rx_pin;
@@ -133,8 +125,7 @@ esp_err_t dmx_init(const dmx_config_t *config, dmx_handle_t *out_handle)
     ctx->is_running = false;
     ctx->tx_task_handle = NULL;
 
-    // Initialize DMX data buffer (start code = 0, all channels = 0)
-    ctx->dmx_data[0] = 0x00; // DMX512 start code
+    ctx->dmx_data[0] = 0x00;
 
     // Configure RS-485 enable pin
     gpio_config_t io_conf = {
@@ -217,17 +208,14 @@ esp_err_t dmx_deinit(dmx_handle_t handle)
 
     dmx_context_t *ctx = (dmx_context_t *)handle;
 
-    // Stop transmission if running
     if (ctx->is_running)
     {
         dmx_stop_transmission(handle);
     }
 
-    // Cleanup UART
     uart_driver_delete(ctx->uart_num);
     gpio_reset_pin(ctx->enable_pin);
 
-    // Free resources
     vSemaphoreDelete(ctx->mutex);
     free(ctx->dmx_data);
     free(ctx);
@@ -253,7 +241,7 @@ esp_err_t dmx_set_channel(dmx_handle_t handle, uint16_t channel, uint8_t value)
 
     if (xSemaphoreTake(ctx->mutex, portMAX_DELAY) == pdTRUE)
     {
-        ctx->dmx_data[channel] = value; // channel index (1-512) maps to array index (1-512)
+        ctx->dmx_data[channel] = value;
         xSemaphoreGive(ctx->mutex);
         return ESP_OK;
     }
@@ -322,14 +310,12 @@ esp_err_t dmx_transmit(dmx_handle_t handle)
     dmx_context_t *ctx = (dmx_context_t *)handle;
     esp_err_t ret;
 
-    // Send break and MAB
     ret = dmx_send_break(ctx);
     if (ret != ESP_OK)
     {
         return ret;
     }
 
-    // Send DMX data (start code + channels)
     if (xSemaphoreTake(ctx->mutex, portMAX_DELAY) == pdTRUE)
     {
         int bytes_written = uart_write_bytes(ctx->uart_num, ctx->dmx_data,
@@ -343,7 +329,6 @@ esp_err_t dmx_transmit(dmx_handle_t handle)
             return ESP_FAIL;
         }
 
-        // Wait for transmission to complete
         uart_wait_tx_done(ctx->uart_num, pdMS_TO_TICKS(DMX_PACKET_TIMEOUT_MS));
         return ESP_OK;
     }
@@ -398,10 +383,9 @@ esp_err_t dmx_stop_transmission(dmx_handle_t handle)
 
     ctx->is_running = false;
 
-    // Wait for task to finish
     if (ctx->tx_task_handle != NULL)
     {
-        vTaskDelay(pdMS_TO_TICKS(50)); // Allow task to clean up
+        vTaskDelay(pdMS_TO_TICKS(50));
         ctx->tx_task_handle = NULL;
     }
 
@@ -420,7 +404,6 @@ esp_err_t dmx_clear_all(dmx_handle_t handle)
 
     if (xSemaphoreTake(ctx->mutex, portMAX_DELAY) == pdTRUE)
     {
-        // Keep start code at 0, clear all channels
         memset(&ctx->dmx_data[1], 0, ctx->universe_size);
         xSemaphoreGive(ctx->mutex);
         ESP_LOGI(TAG, "All DMX channels cleared");
