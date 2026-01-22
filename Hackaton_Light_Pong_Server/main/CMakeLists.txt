@@ -1,5 +1,16 @@
 idf_component_register(SRCS "blink_example_main.c"
                             "drivers/dmx/dmx.c"
                             "drivers/mh_x25/mh_x25.c"
-                       INCLUDE_DIRS "." "drivers" "drivers/dmx" "drivers/mh_x25"
+                            "communication/espnow_handler.c"
+                            "effects/light_effects.c"
+                            "game/game_controller.c"
+                       INCLUDE_DIRS "." 
+                                    "config"
+                                    "drivers" 
+                                    "drivers/dmx" 
+                                    "drivers/mh_x25"
+                                    "communication"
+                                    "effects"
+                                    "game"
                        REQUIRES driver esp_timer esp_event esp_netif esp_wifi nvs_flash)
+

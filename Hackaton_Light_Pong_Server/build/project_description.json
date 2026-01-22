@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "Hackaton_Light_Pong_Server",
-    "project_version":    "efeb396-dirty",
+    "project_version":    "c192abf-dirty",
     "project_path":       "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server",
     "idf_path":           "/home/neyon/esp/v5.5.1/esp-idf",
     "build_dir":          "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build",
@@ -835,8 +835,8 @@
             "managed_reqs": [],
             "managed_priv_reqs": [ "espressif__led_strip" ],
             "file": "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/build/esp-idf/main/libmain.a",
-            "sources": [ "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/main/blink_example_main.c", "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/main/drivers/dmx/dmx.c", "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/main/drivers/mh_x25/mh_x25.c" ],
-            "include_dirs": [ ".", "drivers", "drivers/dmx", "drivers/mh_x25" ]
+            "sources": [ "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/main/blink_example_main.c", "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/main/drivers/dmx/dmx.c", "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/main/drivers/mh_x25/mh_x25.c", "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/main/communication/espnow_handler.c", "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/main/effects/light_effects.c", "/home/neyon/fhv_master/Embedded_Systems/Hackaton_Light_Pong_Server/main/game/game_controller.c" ],
+            "include_dirs": [ ".", "config", "drivers", "drivers/dmx", "drivers/mh_x25", "communication", "effects", "game" ]
         },
         "mbedtls": {
             "alias": "idf::mbedtls",
@@ -2311,7 +2311,7 @@
             "priv_reqs": [ "espressif__led_strip" ],
             "managed_reqs": [],
             "managed_priv_reqs": [ "espressif__led_strip" ],
-            "include_dirs": [ ".", "drivers", "drivers/dmx", "drivers/mh_x25" ]
+            "include_dirs": [ ".", "config", "drivers", "drivers/dmx", "drivers/mh_x25", "communication", "effects", "game" ]
         },
         "espressif__led_strip": {
             "alias": "idf::espressif__led_strip",
