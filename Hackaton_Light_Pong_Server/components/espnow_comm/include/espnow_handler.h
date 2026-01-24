@@ -12,10 +12,14 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "esp_now.h"
+#include "esp_err.h"
 
 // Event bits for paddle hits
 #define PADDLE_TOP_HIT BIT0
 #define PADDLE_BOTTOM_HIT BIT1
+
+// Broadcast MAC address for ESP-NOW
+#define ESPNOW_BROADCAST_MAC ((const uint8_t[]){0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
 
 #ifdef __cplusplus
 extern "C"
@@ -116,6 +120,14 @@ extern "C"
      * @return Player ID (1 or 2), or 0 if not found
      */
     uint8_t espnow_get_player_id(const uint8_t *mac_addr);
+
+    /**
+     * @brief Broadcast game score to all connected players
+     * @param score Pointer to game score structure
+     * @param size Size of the score structure in bytes
+     * @return ESP_OK on success, error code otherwise
+     */
+    esp_err_t espnow_broadcast_score(const void *score, size_t size);
 
 #ifdef __cplusplus
 }

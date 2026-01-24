@@ -69,7 +69,11 @@ static void handle_hello_message(const uint8_t *mac_addr)
             .type = MSG_SERVER_ASSIGN,
             .player_id = existing_id,
             .status = 2};
-        esp_now_send(BROADCAST_MAC, (uint8_t *)&assign, sizeof(assign));
+        esp_err_t ret = esp_now_send(BROADCAST_MAC, (uint8_t *)&assign, sizeof(assign));
+        if (ret != ESP_OK)
+        {
+            ESP_LOGW(TAG, "Failed to send assignment confirmation: %s", esp_err_to_name(ret));
+        }
         return;
     }
 
@@ -81,7 +85,11 @@ static void handle_hello_message(const uint8_t *mac_addr)
             .type = MSG_SERVER_ASSIGN,
             .player_id = 0,
             .status = 1};
-        esp_now_send(BROADCAST_MAC, (uint8_t *)&assign, sizeof(assign));
+        esp_err_t ret = esp_now_send(BROADCAST_MAC, (uint8_t *)&assign, sizeof(assign));
+        if (ret != ESP_OK)
+        {
+            ESP_LOGW(TAG, "Failed to send game full message: %s", esp_err_to_name(ret));
+        }
         return;
     }
 
@@ -107,7 +115,11 @@ static void handle_hello_message(const uint8_t *mac_addr)
             .type = MSG_SERVER_ASSIGN,
             .player_id = assigned_id,
             .status = 0};
-        esp_now_send(BROADCAST_MAC, (uint8_t *)&assign, sizeof(assign));
+        ret = esp_now_send(BROADCAST_MAC, (uint8_t *)&assign, sizeof(assign));
+        if (ret != ESP_OK)
+        {
+            ESP_LOGW(TAG, "Failed to send player assignment: %s", esp_err_to_name(ret));
+        }
     }
     else
     {
@@ -246,9 +258,22 @@ void espnow_receiver_task(void *pvParameters)
 
     while (1)
     {
-        // Your ESP-NOW receiving code here
-        // This runs independently
-
-        vTaskDelay(pdMS_TO_TICKS(10)); // Small delay
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
+}
+
+esp_err_t espnow_broadcast_score(const void *score, size_t size)
+{
+    if (score == NULL || size == 0)
+    {
+        ESP_LOGE(TAG, "Invalid score pointer or size");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_err_t ret = esp_now_send(BROADCAST_MAC, (const uint8_t *)score, size);
+    if (ret != ESP_OK)
+    {
+        ESP_LOGW(TAG, "Failed to broadcast score: %s", esp_err_to_name(ret));
+    }
+    return ret;
 }

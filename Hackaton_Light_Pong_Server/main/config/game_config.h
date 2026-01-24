@@ -20,6 +20,10 @@ extern "C"
 #define SIDE_TOP 0
 #define SIDE_BOTTOM 1
 
+/* Button States */
+#define BUTTON_FIREBALL 0
+#define BUTTON_NORMAL 1
+
 // Win condition
 #define WIN_SCORE 9
 

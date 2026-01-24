@@ -31,7 +31,7 @@ static volatile uint8_t last_btn_right_pressed = 0;
 static dmx_handle_t dmx_handle = NULL;
 static mh_x25_handle_t light_handle = NULL;
 
-game_score_t game_score = {0, 0};
+static game_score_t game_score = {0, 0};
 
 void app_main(void)
 {

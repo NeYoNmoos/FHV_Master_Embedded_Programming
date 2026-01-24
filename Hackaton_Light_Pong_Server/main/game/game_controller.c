@@ -9,9 +9,9 @@
 #include "game_types.h"
 #include "../config/game_config.h"
 #include "light_effects.h"
+#include "espnow_handler.h"
 #include "esp_log.h"
 #include "esp_random.h"
-#include "esp_now.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -30,12 +30,10 @@ typedef struct
 {
     int side_id;
     int opposite_side;
-    uint8_t tilt_position;
     uint8_t opposite_tilt;
     EventBits_t event_bit;
     volatile uint8_t *button_state;
     uint8_t player_number;
-    uint8_t opponent_number;
     uint8_t celebration_color;
 } side_config_t;
 
@@ -61,7 +59,7 @@ static uint8_t get_random_pan(uint8_t pan_min, uint8_t pan_max)
 
 static void apply_ball_effect(uint8_t button_pressed)
 {
-    if (button_pressed == 0)
+    if (button_pressed == BUTTON_FIREBALL)
     {
         ESP_LOGI(TAG, "Fireball activated");
         mh_x25_set_color(light_handle, MH_X25_COLOR_RED);
@@ -94,6 +92,12 @@ static void celebration_blink(uint8_t color)
 
 static bool handle_paddle_hit(const side_config_t *cfg, uint8_t pan_min, uint8_t pan_max, TickType_t timeout)
 {
+    if (cfg == NULL)
+    {
+        ESP_LOGE(TAG, "Invalid config pointer");
+        return false;
+    }
+
     ESP_LOGI(TAG, "Waiting for Player %d paddle hit", cfg->player_number);
 
     xEventGroupClearBits(paddle_events, cfg->event_bit);
@@ -122,6 +126,12 @@ static bool handle_paddle_hit(const side_config_t *cfg, uint8_t pan_min, uint8_t
 
 static bool handle_timeout(const side_config_t *cfg, uint8_t pan_min, uint8_t pan_max)
 {
+    if (cfg == NULL)
+    {
+        ESP_LOGE(TAG, "Invalid config pointer");
+        return false;
+    }
+
     if (cfg->player_number == 1)
         game_score->score_2++;
     else
@@ -130,7 +140,11 @@ static bool handle_timeout(const side_config_t *cfg, uint8_t pan_min, uint8_t pa
     ESP_LOGI(TAG, "Timeout: Player %d missed - Score P1=%d P2=%d",
              cfg->player_number, game_score->score_1, game_score->score_2);
 
-    esp_now_send(NULL, (uint8_t *)game_score, sizeof(game_score_t));
+    esp_err_t ret = espnow_broadcast_score(game_score, sizeof(game_score_t));
+    if (ret != ESP_OK)
+    {
+        ESP_LOGW(TAG, "Failed to send score update: %s", esp_err_to_name(ret));
+    }
 
     uint8_t winner = (game_score->score_1 >= WIN_SCORE) ? 1 : (game_score->score_2 >= WIN_SCORE) ? 2
                                                                                                  : 0;
@@ -140,7 +154,11 @@ static bool handle_timeout(const side_config_t *cfg, uint8_t pan_min, uint8_t pa
         play_winning_animation(winner, light_handle);
         game_score->score_1 = 0;
         game_score->score_2 = 0;
-        esp_now_send(NULL, (uint8_t *)game_score, sizeof(game_score_t));
+        ret = espnow_broadcast_score(game_score, sizeof(game_score_t));
+        if (ret != ESP_OK)
+        {
+            ESP_LOGW(TAG, "Failed to send reset score: %s", esp_err_to_name(ret));
+        }
 
         uint8_t pan_position = get_random_pan(pan_min, pan_max);
         mh_x25_set_position_16bit(light_handle, pan_position << 8, TILT_TOP << 8);
@@ -182,23 +200,19 @@ void dmx_controller_task(void *pvParameters)
     side_config_t player1_config = {
         .side_id = SIDE_TOP,
         .opposite_side = SIDE_BOTTOM,
-        .tilt_position = TILT_TOP,
         .opposite_tilt = TILT_BOTTOM,
         .event_bit = PADDLE_TOP_HIT,
         .button_state = last_btn_left_pressed,
         .player_number = 1,
-        .opponent_number = 2,
         .celebration_color = MH_X25_COLOR_DARK_BLUE};
 
     side_config_t player2_config = {
         .side_id = SIDE_BOTTOM,
         .opposite_side = SIDE_TOP,
-        .tilt_position = TILT_BOTTOM,
         .opposite_tilt = TILT_TOP,
         .event_bit = PADDLE_BOTTOM_HIT,
         .button_state = last_btn_right_pressed,
         .player_number = 2,
-        .opponent_number = 1,
         .celebration_color = MH_X25_COLOR_GREEN};
 
     while (1)
